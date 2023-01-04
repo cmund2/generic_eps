@@ -155,7 +155,7 @@ int32 GENERIC_EPS_AppInit(void)
     /*
     ** Create the Software Bus command pipe 
     */
-    status = CFE_SB_CreatePipe(&GENERIC_EPS_AppData.CmdPipe, GENERIC_EPS_PIPE_DEPTH, "GENERIC_EPS_CMD_PIPE");
+    status = CFE_SB_CreatePipe(&GENERIC_EPS_AppData.CmdPipe, GENERIC_EPS_PIPE_DEPTH, "EPS_CMD_PIPE");
     if (status != CFE_SUCCESS)
     {
         CFE_EVS_SendEvent(GENERIC_EPS_PIPE_ERR_EID, CFE_EVS_ERROR,
