@@ -18,40 +18,46 @@ Additionally battery voltage, battery temperature and solar array voltage, solar
 The protocol in use is I2C at 1MHz with 7-bit address 0x2B. 
 
 ## Command Address
-Device command are all formatted in the same manner and are fixed in size.
-Commands are confirmed by reading the commanded address and confirming previous input is returned.
+Device commands are all formatted in the same manner and are fixed in size.
+Commands are confirmed only by verifying the expected switch state change in telemetry.
 * uint8, Slave Address [7:1] and Read/Write [0]
-* uint8, Address
+* uint8, Command
 * uint8, Data
 * uint8, CRC
-  - CRC8 of address and data
+  - CRC8 of command and data
 
-Command Address Table
+Command Table
 * 0x00, Switch 0 State
   - Data of 0x00 for OFF, 0xAA for ON for all switches
 * 0x01, Switch 1 State
 * ...
 * 0x07, Switch 7 State
-* 0xA0, Reset
+* 0x70, Telemetry Request
+  - Data field unused
+* 0xAA, Reset
   - Data of 0xAA to trigger power cycle
 
 ## Telemetry
-The telemetry can be read individually or in sequential groups.
-Telemetry registers are read only.
-Telemetry reported is in big endian format (MSB x, LSB x+1).
-All telemetry register reads are followed by a single uint8 CRC8 of the previous data.
-* 0xB0, Battery
+Telemetry reported is in big endian format (MSB x, LSB x+1) and is updated at a 1Hz frequency.
+* Battery
   - uint16, voltage
   - uint16, temperature
-* 0xB4, EPS
+* EPS
+  - uint16, 3.3 voltage
+  - uint16, 5.0 voltage
+  - uint16, 12.0 voltage
   - uint16, temperature
-* 0xB6, Solar Array
+* Solar Array
   - uint16, voltage
-  - uint16, temperature
-* 0xBA, Switch [0-7]
+  - uint16, temperature 
+* Switch [0-7]
   - uint16, voltage
   - uint16, current
   - uint16, status
+    * Bits [15:8] - Error flags, 0x00 is healthy
+    * Bits [7:0]  - 0x00 is off, 0xAA is on
+* uint8, CRC
+  - CRC8 of the previous data
 
 Conversion table
 * Voltages = (uint16 value * 0.001V)

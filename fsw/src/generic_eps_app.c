@@ -29,24 +29,12 @@ static CFE_EVS_BinFilter_t  GENERIC_EPS_EventFilters[] =
     {GENERIC_EPS_CMD_ERR_EID,            0x0000},
     {GENERIC_EPS_CMD_NOOP_INF_EID,       0x0000},
     {GENERIC_EPS_CMD_RESET_INF_EID,      0x0000},
-    {GENERIC_EPS_CMD_ENABLE_INF_EID,     0x0000},
-    {GENERIC_EPS_ENABLE_INF_EID,         0x0000},
-    {GENERIC_EPS_ENABLE_ERR_EID,         0x0000},
-    {GENERIC_EPS_CMD_DISABLE_INF_EID,    0x0000},
-    {GENERIC_EPS_DISABLE_INF_EID,        0x0000},
-    {GENERIC_EPS_DISABLE_ERR_EID,        0x0000},
-    {GENERIC_EPS_CMD_CONFIG_INF_EID,     0x0000},
-    {GENERIC_EPS_CONFIG_INF_EID,         0x0000},
-    {GENERIC_EPS_CONFIG_ERR_EID,         0x0000},
+    {GENERIC_EPS_CMD_SWITCH_INF_EID,     0x0000},
+    {GENERIC_EPS_SWITCH_INF_EID,         0x0000},
+    {GENERIC_EPS_SWITCH_ERR_EID,         0x0000},
     {GENERIC_EPS_DEVICE_TLM_ERR_EID,     0x0000},
     {GENERIC_EPS_REQ_HK_ERR_EID,         0x0000},
-    {GENERIC_EPS_REQ_DATA_ERR_EID,       0x0000},
-    {GENERIC_EPS_UART_INIT_ERR_EID,      0x0000},
-    {GENERIC_EPS_UART_CLOSE_ERR_EID,     0x0000},
-    {GENERIC_EPS_UART_READ_ERR_EID,      0x0000},
-    {GENERIC_EPS_UART_WRITE_ERR_EID,     0x0000},
-    {GENERIC_EPS_UART_TIMEOUT_ERR_EID,   0x0000},
-    /* TODO: Add additional event IDs (EID) to the table as created */
+    {GENERIC_EPS_I2C_INIT_ERR_EID,       0x0000},
 };
 
 
@@ -113,12 +101,7 @@ void GENERIC_EPS_AppMain(void)
             GENERIC_EPS_AppData.RunStatus = CFE_ES_APP_ERROR;
         }
     }
-
-    /*
-    ** Disable component, which cleans up the interface, upon exit
-    */
-    GENERIC_EPS_Disable();
-
+    
     /*
     ** Performance log exit stamp
     */
@@ -137,6 +120,7 @@ void GENERIC_EPS_AppMain(void)
 int32 GENERIC_EPS_AppInit(void)
 {
     int32 status = OS_SUCCESS;
+    uint8_t i = 0;
     
     GENERIC_EPS_AppData.RunStatus = CFE_ES_APP_RUN;
 
@@ -187,11 +171,6 @@ int32 GENERIC_EPS_AppInit(void)
         return status;
     }
 
-    /*
-    ** TODO: Subscribe to any other messages here
-    */
-
-
     /* 
     ** Initialize the published HK message - this HK message will contain the 
     ** telemetry that has been defined in the GENERIC_EPS_HkTelemetryPkt for this app.
@@ -199,19 +178,6 @@ int32 GENERIC_EPS_AppInit(void)
     CFE_SB_InitMsg(&GENERIC_EPS_AppData.HkTelemetryPkt,
                    GENERIC_EPS_HK_TLM_MID,
                    GENERIC_EPS_HK_TLM_LNGTH, TRUE);
-
-    /*
-    ** Initialize the device packet message
-    ** This packet is specific to your application
-    */
-    CFE_SB_InitMsg(&GENERIC_EPS_AppData.DevicePkt,
-                   GENERIC_EPS_DEVICE_TLM_MID,
-                   GENERIC_EPS_DEVICE_TLM_LNGTH, TRUE);
-
-    /*
-    ** TODO: Initialize any other messages that this app will publish
-    */
-
 
     /* 
     ** Always reset all counters during application initialization 
@@ -222,24 +188,51 @@ int32 GENERIC_EPS_AppInit(void)
     ** Initialize application data
     ** Note that counters are excluded as they were reset in the previous code block
     */
-    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceEnabled = GENERIC_EPS_DEVICE_DISABLED;
-    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.DeviceCounter = 0;
-    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.DeviceConfig = 0;
-    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.DeviceStatus = 0;
-
-    /* 
-     ** Send an information event that the app has initialized. 
-     ** This is useful for debugging the loading of individual applications.
-     */
-    status = CFE_EVS_SendEvent(GENERIC_EPS_STARTUP_INF_EID, CFE_EVS_INFORMATION,
-               "GENERIC_EPS App Initialized. Version %d.%d.%d.%d",
-                GENERIC_EPS_MAJOR_VERSION,
-                GENERIC_EPS_MINOR_VERSION, 
-                GENERIC_EPS_REVISION, 
-                GENERIC_EPS_MISSION_REV);	
-    if (status != CFE_SUCCESS)
+    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.BatteryVoltage = 0;
+    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.BatteryTemperature = 0;
+    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.EPSTemperature = 0;
+    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.SolarArrayVoltage = 0;
+    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.SolarArrayTemperature = 0;
+    for(i = 0; i < 8; i++)
     {
-        CFE_ES_WriteToSysLog("GENERIC_EPS: Error sending initialization event: 0x%08X\n", (unsigned int) status);
+        GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.Switch[i].Voltage = 0;
+        GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.Switch[i].Current = 0;
+        GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.Switch[i].Status = 0;
+    }
+
+    /*
+    ** Initialize hardware interface data
+    */ 
+    GENERIC_EPS_AppData.Generic_epsI2C.handle = GENERIC_EPS_CFG_I2C_HANDLE;
+    GENERIC_EPS_AppData.Generic_epsI2C.addr = GENERIC_EPS_CFG_I2C_ADDRESS;
+    GENERIC_EPS_AppData.Generic_epsI2C.isOpen = I2C_CLOSED;
+    GENERIC_EPS_AppData.Generic_epsI2C.speed = GENERIC_EPS_CFG_I2C_SPEED;
+
+    /* Open device specific protocols */
+    status = i2c_master_init(&GENERIC_EPS_AppData.Generic_epsI2C);
+    if(status != OS_SUCCESS) 
+    {
+        CFE_EVS_SendEvent(GENERIC_EPS_I2C_INIT_ERR_EID,
+                          CFE_EVS_ERROR,
+                          "Could not initialize generic EPS I2C. Error = 0x%08x",
+                          status);
+    }
+    else
+    {
+        /* 
+        ** Send an information event that the app has initialized. 
+        ** This is useful for debugging the loading of individual applications.
+        */
+        status = CFE_EVS_SendEvent(GENERIC_EPS_STARTUP_INF_EID, CFE_EVS_INFORMATION,
+                "GENERIC_EPS App Initialized. Version %d.%d.%d.%d",
+                    GENERIC_EPS_MAJOR_VERSION,
+                    GENERIC_EPS_MINOR_VERSION, 
+                    GENERIC_EPS_REVISION, 
+                    GENERIC_EPS_MISSION_REV);	
+        if (status != CFE_SUCCESS)
+        {
+            CFE_ES_WriteToSysLog("GENERIC_EPS: Error sending initialization event: 0x%08X\n", (unsigned int) status);
+        }
     }
     return status;
 } 
@@ -328,45 +321,25 @@ void GENERIC_EPS_ProcessGroundCommand(void)
             break;
 
         /*
-        ** Enable Command
+        ** Change switch state
         */
-        case GENERIC_EPS_ENABLE_CC:
-            if (GENERIC_EPS_VerifyCmdLength(GENERIC_EPS_AppData.MsgPtr, sizeof(GENERIC_EPS_NoArgs_cmd_t)) == OS_SUCCESS)
+        case GENERIC_EPS_SWITCH_CC:
+            if (GENERIC_EPS_VerifyCmdLength(GENERIC_EPS_AppData.MsgPtr, sizeof(GENERIC_EPS_Switch_cmd_t)) == OS_SUCCESS)
             {
-                CFE_EVS_SendEvent(GENERIC_EPS_CMD_ENABLE_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Enable command received");
-                GENERIC_EPS_Enable();
-            }
-            break;
-
-        /*
-        ** Disable Command
-        */
-        case GENERIC_EPS_DISABLE_CC:
-            if (GENERIC_EPS_VerifyCmdLength(GENERIC_EPS_AppData.MsgPtr, sizeof(GENERIC_EPS_NoArgs_cmd_t)) == OS_SUCCESS)
-            {
-                CFE_EVS_SendEvent(GENERIC_EPS_CMD_DISABLE_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Disable command received");
-                GENERIC_EPS_Disable();
-            }
-            break;
-
-        /*
-        ** TODO: Edit and add more command codes as appropriate for the application
-        ** Set Configuration Command
-        ** Note that this is an example of a command that has additional arguments
-        */
-        case GENERIC_EPS_CONFIG_CC:
-            if (GENERIC_EPS_VerifyCmdLength(GENERIC_EPS_AppData.MsgPtr, sizeof(GENERIC_EPS_Config_cmd_t)) == OS_SUCCESS)
-            {
-                CFE_EVS_SendEvent(GENERIC_EPS_CMD_CONFIG_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Configuration command received");
-                /* Command device to send HK */
-                status = GENERIC_EPS_CommandDevice(GENERIC_EPS_AppData.Generic_epsUart.handle, GENERIC_EPS_DEVICE_CFG_CMD, ((GENERIC_EPS_Config_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->DeviceCfg);
+                CFE_EVS_SendEvent(GENERIC_EPS_CMD_SWITCH_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Switch command received");
+                status = GENERIC_EPS_CommandSwitch(GENERIC_EPS_AppData.Generic_epsI2C.handle,
+                                                 ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->SwitchNumber,
+                                                 ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->State,
+                                                   &GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK);
                 if (status == OS_SUCCESS)
                 {
                     GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
+                    CFE_EVS_SendEvent(GENERIC_EPS_SWITCH_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Switch %d set to 0x%02x counters command received", ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->SwitchNumber, ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->State);
                 }
                 else
                 {
                     GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
+                    CFE_EVS_SendEvent(GENERIC_EPS_SWITCH_ERR_EID, CFE_EVS_ERROR, "GENERIC_EPS: Set switch %d to 0x%02x failed!", ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->SwitchNumber, ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->State);
                 }
             }
             break;
@@ -387,7 +360,6 @@ void GENERIC_EPS_ProcessGroundCommand(void)
 
 /*
 ** Process Telemetry Request - Triggered in response to a telemetery request
-** TODO: Add additional telemetry required by the specific component
 */
 void GENERIC_EPS_ProcessTelemetryRequest(void)
 {
@@ -402,10 +374,6 @@ void GENERIC_EPS_ProcessTelemetryRequest(void)
     {
         case GENERIC_EPS_REQ_HK_TLM:
             GENERIC_EPS_ReportHousekeeping();
-            break;
-
-        case GENERIC_EPS_REQ_DATA_TLM:
-            GENERIC_EPS_ReportDeviceTelemetry();
             break;
 
         /*
@@ -429,56 +397,21 @@ void GENERIC_EPS_ReportHousekeeping(void)
 {
     int32 status = OS_SUCCESS;
 
-    /* Check that device is enabled */
-    if (GENERIC_EPS_AppData.HkTelemetryPkt.DeviceEnabled == GENERIC_EPS_DEVICE_ENABLED)
+    status = GENERIC_EPS_RequestHK(GENERIC_EPS_AppData.Generic_epsI2C.handle, &GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK);
+    if (status == OS_SUCCESS)
     {
-        status = GENERIC_EPS_RequestHK(GENERIC_EPS_AppData.Generic_epsUart.handle, (GENERIC_EPS_Device_HK_tlm_t*) &GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK);
-        if (status == OS_SUCCESS)
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
-        }
-        else
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
-            CFE_EVS_SendEvent(GENERIC_EPS_REQ_HK_ERR_EID, CFE_EVS_ERROR, 
-                    "GENERIC_EPS: Request device HK reported error %d", status);
-        }
+        GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
     }
-    /* Intentionally do not report errors if disabled */
+    else
+    {
+        GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
+        CFE_EVS_SendEvent(GENERIC_EPS_REQ_HK_ERR_EID, CFE_EVS_ERROR, 
+                "GENERIC_EPS: Request device HK reported error %d", status);
+    }
 
     /* Time stamp and publish housekeeping telemetry */
     CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &GENERIC_EPS_AppData.HkTelemetryPkt);
     CFE_SB_SendMsg((CFE_SB_Msg_t *) &GENERIC_EPS_AppData.HkTelemetryPkt);
-    return;
-}
-
-
-/*
-** Collect and Report Device Telemetry
-*/
-void GENERIC_EPS_ReportDeviceTelemetry(void)
-{
-    int32 status = OS_SUCCESS;
-
-    /* Check that device is enabled */
-    if (GENERIC_EPS_AppData.HkTelemetryPkt.DeviceEnabled == GENERIC_EPS_DEVICE_ENABLED)
-    {
-        status = GENERIC_EPS_RequestData(GENERIC_EPS_AppData.Generic_epsUart.handle, (GENERIC_EPS_Device_Data_tlm_t*) &GENERIC_EPS_AppData.DevicePkt.Generic_eps);
-        if (status == OS_SUCCESS)
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
-            /* Time stamp and publish data telemetry */
-            CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &GENERIC_EPS_AppData.DevicePkt);
-            CFE_SB_SendMsg((CFE_SB_Msg_t *) &GENERIC_EPS_AppData.DevicePkt);
-        }
-        else
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
-            CFE_EVS_SendEvent(GENERIC_EPS_REQ_DATA_ERR_EID, CFE_EVS_ERROR, 
-                    "GENERIC_EPS: Request device data reported error %d", status);
-        }
-    }
-    /* Intentionally do not report errors if disabled */
     return;
 }
 
@@ -494,85 +427,6 @@ void GENERIC_EPS_ResetCounters(void)
     GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount = 0;
     return;
 } 
-
-
-/*
-** Enable Component
-** TODO: Edit for your specific component implementation
-*/
-void GENERIC_EPS_Enable(void)
-{
-    int32 status = OS_SUCCESS;
-
-    /* Check that device is disabled */
-    if (GENERIC_EPS_AppData.HkTelemetryPkt.DeviceEnabled == GENERIC_EPS_DEVICE_DISABLED)
-    {
-        /*
-        ** Initialize hardware interface data
-        ** TODO: Make specific to your application depending on protocol in use
-        ** Note that other components provide examples for the different protocols available
-        */ 
-        GENERIC_EPS_AppData.Generic_epsUart.deviceString = GENERIC_EPS_CFG_STRING;
-        GENERIC_EPS_AppData.Generic_epsUart.handle = GENERIC_EPS_CFG_HANDLE;
-        GENERIC_EPS_AppData.Generic_epsUart.isOpen = PORT_CLOSED;
-        GENERIC_EPS_AppData.Generic_epsUart.baud = GENERIC_EPS_CFG_BAUDRATE_HZ;
-        GENERIC_EPS_AppData.Generic_epsUart.access_option = uart_access_flag_RDWR;
-
-        /* Open device specific protocols */
-        status = uart_init_port(&GENERIC_EPS_AppData.Generic_epsUart);
-        if (status == OS_SUCCESS)
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceEnabled = GENERIC_EPS_DEVICE_ENABLED;
-            CFE_EVS_SendEvent(GENERIC_EPS_ENABLE_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Device enabled");
-        }
-        else
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
-            CFE_EVS_SendEvent(GENERIC_EPS_UART_INIT_ERR_EID, CFE_EVS_ERROR, "GENERIC_EPS: UART port initialization error %d", status);
-        }
-    }
-    else
-    {
-        GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
-        CFE_EVS_SendEvent(GENERIC_EPS_ENABLE_ERR_EID, CFE_EVS_ERROR, "GENERIC_EPS: Device enable failed, already enabled");
-    }
-    return;
-}
-
-
-/*
-** Disable Component
-** TODO: Edit for your specific component implementation
-*/
-void GENERIC_EPS_Disable(void)
-{
-    int32 status = OS_SUCCESS;
-
-    /* Check that device is enabled */
-    if (GENERIC_EPS_AppData.HkTelemetryPkt.DeviceEnabled == GENERIC_EPS_DEVICE_ENABLED)
-    {
-        /* Open device specific protocols */
-        status = uart_close_port(GENERIC_EPS_AppData.Generic_epsUart.handle);
-        if (status == OS_SUCCESS)
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceEnabled = GENERIC_EPS_DEVICE_DISABLED;
-            CFE_EVS_SendEvent(GENERIC_EPS_DISABLE_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Device disabled");
-        }
-        else
-        {
-            GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
-            CFE_EVS_SendEvent(GENERIC_EPS_UART_CLOSE_ERR_EID, CFE_EVS_ERROR, "GENERIC_EPS: UART port close error %d", status);
-        }
-    }
-    else
-    {
-        GENERIC_EPS_AppData.HkTelemetryPkt.DeviceErrorCount++;
-        CFE_EVS_SendEvent(GENERIC_EPS_DISABLE_ERR_EID, CFE_EVS_ERROR, "GENERIC_EPS: Device disable failed, already disabled");
-    }
-    return;
-}
 
 
 /*
