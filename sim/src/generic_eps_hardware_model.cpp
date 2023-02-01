@@ -6,7 +6,7 @@ namespace Nos3
 
     extern ItcLogger::Logger *sim_logger;
 
-    Generic_epsHardwareModel::Generic_epsHardwareModel(const boost::property_tree::ptree& config) : SimIHardwareModel(config), _enabled(0), _count(0), _config(0), _status(0)
+    Generic_epsHardwareModel::Generic_epsHardwareModel(const boost::property_tree::ptree& config) : SimIHardwareModel(config) 
     {
         /* Get the NOS engine connection string */
         std::string connection_string = config.get("common.nos-connection-string", "tcp://127.0.0.1:12001"); 
@@ -19,35 +19,31 @@ namespace Nos3
 
         /* Get on a protocol bus */
         /* Note: Initialized defaults in case value not found in config file */
-        std::string bus_name = "usart_29";
-        int node_port = 29;
+        std::string bus_name = "i2c_0";
+        int bus_address = 0x2B;
         if (config.get_child_optional("simulator.hardware-model.connections")) 
         {
             /* Loop through the connections for hardware model */
             BOOST_FOREACH(const boost::property_tree::ptree::value_type &v, config.get_child("simulator.hardware-model.connections"))
             {
                 /* v.second is the child tree (v.first is the name of the child) */
-                if (v.second.get("type", "").compare("usart") == 0)
+                if (v.second.get("type", "").compare("i2c") == 0)
                 {
                     /* Configuration found */
                     bus_name = v.second.get("bus-name", bus_name);
-                    node_port = v.second.get("node-port", node_port);
+                    bus_address = v.second.get("bus-address", bus_address);
                     break;
                 }
             }
         }
-        _uart_connection.reset(new NosEngine::Uart::Uart(_hub, config.get("simulator.name", "generic_eps_sim"), connection_string, bus_name));
-        _uart_connection->open(node_port);
-        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on UART bus name %s, port %d.", bus_name.c_str(), node_port);
-    
-        /* Configure protocol callback */
-        _uart_connection->set_read_callback(std::bind(&Generic_epsHardwareModel::uart_read_callback, this, std::placeholders::_1, std::placeholders::_2));
+        _i2c_slave_connection = new I2CSlaveConnection(this, bus_address, connection_string, bus_name);
+        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on I2C bus name %s as address 0x%02x.", bus_name.c_str(), bus_address);
 
-        /* Get on the command bus*/
+        /* Get on the command bus - EPS receives commands here */
         std::string time_bus_name = "command";
         if (config.get_child_optional("hardware-model.connections")) 
         {
-            /* Loop through the connections for the hardware model */
+            /* Loop through the connections for the hardware model connections */
             BOOST_FOREACH(const boost::property_tree::ptree::value_type &v, config.get_child("hardware-model.connections"))
             {
                 /* v.first is the name of the child */
@@ -63,6 +59,59 @@ namespace Nos3
         _time_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", time_bus_name.c_str());
 
+        /* Get on the sim bus - EPS sends commands here */
+        _sim_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
+        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on bus named %s.", time_bus_name.c_str());
+
+        /* Initialize status for each switch */
+        _init_switch[0]._node_name = config.get("hardware-model.connections.switch_0.node-name", "switch_0");
+        _init_switch[0]._voltage = config.get("hardware-model.connections.switch_0.voltage", "3.3");
+        _init_switch[0]._current = config.get("hardware-model.connections.switch_0.current", "0.25");
+        _init_switch[0]._state = config.get("hardware-model.connections.switch_0.hex_status", "0000");
+
+        _init_switch[1]._node_name = config.get("hardware-model.connections.switch_1.node-name", "switch_1");
+        _init_switch[1]._voltage = config.get("hardware-model.connections.switch_1.voltage", "3.3");
+        _init_switch[1]._current = config.get("hardware-model.connections.switch_1.current", "0.1");
+        _init_switch[1]._state = config.get("hardware-model.connections.switch_1.hex_status", "0000");
+
+        _init_switch[2]._node_name = config.get("hardware-model.connections.switch_2.node-name", "switch_2");
+        _init_switch[2]._voltage = config.get("hardware-model.connections.switch_2.voltage", "5.0");
+        _init_switch[2]._current = config.get("hardware-model.connections.switch_2.current", "0.2");
+        _init_switch[2]._state = config.get("hardware-model.connections.switch_2.hex_status", "0000");
+
+        _init_switch[3]._node_name = config.get("hardware-model.connections.switch_3.node-name", "switch_3");
+        _init_switch[3]._voltage = config.get("hardware-model.connections.switch_3.voltage", "5.0");
+        _init_switch[3]._current = config.get("hardware-model.connections.switch_3.current", "0.3");
+        _init_switch[3]._state = config.get("hardware-model.connections.switch_3.hex_status", "0000");
+
+        _init_switch[4]._node_name = config.get("hardware-model.connections.switch_4.node-name", "switch_4");
+        _init_switch[4]._voltage = config.get("hardware-model.connections.switch_4.voltage", "12.0");
+        _init_switch[4]._current = config.get("hardware-model.connections.switch_4.current", "0.4");
+        _init_switch[4]._state = config.get("hardware-model.connections.switch_4.hex_status", "0000");
+
+        _init_switch[5]._node_name = config.get("hardware-model.connections.switch_5.node-name", "switch_5");
+        _init_switch[5]._voltage = config.get("hardware-model.connections.switch_5.voltage", "12.0");
+        _init_switch[5]._current = config.get("hardware-model.connections.switch_5.current", "0.5");
+        _init_switch[5]._state = config.get("hardware-model.connections.switch_5.hex_status", "0000");
+
+        _init_switch[6]._node_name = config.get("hardware-model.connections.switch_6.node-name", "switch_6");
+        _init_switch[6]._voltage = config.get("hardware-model.connections.switch_6.voltage", "3.3");
+        _init_switch[6]._current = config.get("hardware-model.connections.switch_6.current", "0.6");
+        _init_switch[6]._state = config.get("hardware-model.connections.switch_6.hex_status", "0000");
+
+        _init_switch[7]._node_name = config.get("hardware-model.connections.switch_7.node-name", "switch_7");
+        _init_switch[7]._voltage = config.get("hardware-model.connections.switch_7.voltage", "5.0");
+        _init_switch[7]._current = config.get("hardware-model.connections.switch_7.current", "0.7");
+        _init_switch[7]._state = config.get("hardware-model.connections.switch_7.hex_status", "0000");
+
+        std::uint8_t i;
+        for (i = 0; i < 8; i++)
+        {
+            _switch[i]._voltage = atoi((_init_switch[i]._voltage).c_str()) * 1000;
+            _switch[i]._current = atoi((_init_switch[i]._current).c_str()) * 1000;
+            _switch[i]._status = std::stoi((_init_switch[i]._state).c_str(), 0, 16);
+        }
+
         /* Construction complete */
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Construction complete.");
     }
@@ -71,7 +120,8 @@ namespace Nos3
     Generic_epsHardwareModel::~Generic_epsHardwareModel(void)
     {        
         /* Close the protocol bus */
-        _uart_connection->close();
+       delete _i2c_slave_connection;
+        _i2c_slave_connection = nullptr;
 
         /* Clean up the data provider */
         delete _generic_eps_dp;
@@ -126,47 +176,35 @@ namespace Nos3
             _keep_running = false;
             response = "Generic_epsHardwareModel::command_callback:  Stopping";
         }
-        /* TODO: Add anything additional commands here */
 
         /* Send a reply */
         sim_logger->info("Generic_epsHardwareModel::command_callback:  Sending reply: %s.", response.c_str());
         _command_node->send_reply_message_async(msg, response.size(), response.c_str());
     }
 
-
-    /* Custom function to prepare the Generic_eps HK telemetry */
-    void Generic_epsHardwareModel::create_generic_eps_hk(std::vector<uint8_t>& out_data)
+    std::uint8_t Generic_epsHardwareModel::generic_eps_crc8(const std::vector<uint8_t>& crc_data, std::uint32_t crc_size)
     {
-        /* Prepare data size */
-        out_data.resize(16, 0x00);
+        std::uint8_t crc = 0xFF;
+        std::uint32_t i;
+        std::uint32_t j;
 
-        /* Streaming data header - 0xDEAD */
-        out_data[0] = 0xDE;
-        out_data[1] = 0xAD;
-        
-        /* Sequence count */
-        out_data[2] = (_count >> 24) & 0x000000FF; 
-        out_data[3] = (_count >> 16) & 0x000000FF; 
-        out_data[4] = (_count >>  8) & 0x000000FF; 
-        out_data[5] =  _count & 0x000000FF;
-        
-        /* Configuration */
-        out_data[6] = (_config >> 24) & 0x000000FF; 
-        out_data[7] = (_config >> 16) & 0x000000FF; 
-        out_data[8] = (_config >>  8) & 0x000000FF; 
-        out_data[9] =  _config & 0x000000FF;
-
-        /* Device Status */
-        out_data[10] = (_status >> 24) & 0x000000FF; 
-        out_data[11] = (_status >> 16) & 0x000000FF; 
-        out_data[12] = (_status >>  8) & 0x000000FF; 
-        out_data[13] =  _status & 0x000000FF;
-
-        /* Streaming data trailer - 0xBEEF */
-        out_data[14] = 0xBE;
-        out_data[15] = 0xEF;
+        for (i = 0; i < crc_size; i++) 
+        {
+            crc ^= crc_data[i];
+            for (j = 0; j < 8; j++) 
+            {
+                if ((crc & 0x80) != 0)
+                {
+                    crc = (uint8_t)((crc << 1) ^ 0x31);
+                }
+                else
+                {
+                    crc <<= 1;
+                }
+            }
+        }
+        return crc;
     }
-
 
     /* Custom function to prepare the Generic_eps Data */
     void Generic_epsHardwareModel::create_generic_eps_data(std::vector<uint8_t>& out_data)
@@ -174,92 +212,86 @@ namespace Nos3
         boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
 
         /* Prepare data size */
-        out_data.resize(14, 0x00);
+        out_data.resize(65, 0x00);
 
-        /* Streaming data header - 0xDEAD */
+        /* Battery  - Voltage */
         out_data[0] = 0xDE;
         out_data[1] = 0xAD;
+        /* Battery  - Temperature */
+        out_data[2] = 0x00; 
+        out_data[3] = 0x00;
         
-        /* Sequence count */
-        out_data[2] = (_count >> 24) & 0x000000FF; 
-        out_data[3] = (_count >> 16) & 0x000000FF; 
-        out_data[4] = (_count >>  8) & 0x000000FF; 
-        out_data[5] =  _count & 0x000000FF;
-        
-        /* 
-        ** Payload 
-        ** 
-        ** Device is big engian (most significant byte first)
-        ** Assuming data is valid regardless of dynamic / environmental data
-        ** Floating poing numbers are extremely problematic 
-        **   (https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html)
-        ** Most hardware transmits some type of unsigned integer (e.g. from an ADC), so that's what we've done
-        ** Scale each of the x, y, z (which are in the range [-1.0, 1.0]) by 32767, 
-        **   and add 32768 so that the result fits in a uint16
-        */
-        uint16_t x   = (uint16_t)(data_point->get_generic_eps_data_x()*32767.0 + 32768.0);
-        out_data[6]  = (x >> 8) & 0x00FF;
-        out_data[7]  =  x       & 0x00FF;
-        uint16_t y   = (uint16_t)(data_point->get_generic_eps_data_y()*32767.0 + 32768.0);
-        out_data[8]  = (y >> 8) & 0x00FF;
-        out_data[9]  =  y       & 0x00FF;
-        uint16_t z   = (uint16_t)(data_point->get_generic_eps_data_z()*32767.0 + 32768.0);
-        out_data[10] = (z >> 8) & 0x00FF;
-        out_data[11] =  z       & 0x00FF;
+        /* EPS      - 3.3 Voltage */
+        out_data[4] = 0x00; 
+        out_data[5] = 0x00; 
+        /* EPS      - 5.0 Voltage */
+        out_data[6] = 0x00;
+        out_data[7] = 0x00;
+        /* EPS      - 12.0 Voltage */
+        out_data[8] = 0x00; 
+        out_data[9] = 0x00; 
+        /* EPS      - Temperature */
+        out_data[10] = 0x00;
+        out_data[11] = 0x00;
 
-        /* Streaming data trailer - 0xBEEF */
-        out_data[12] = 0xBE;
-        out_data[13] = 0xEF;
+        /* Solar Array - Voltage */
+        out_data[12] = 0x00;
+        out_data[13] = 0x00;
+        /* Solar Array - Temperature */
+        out_data[14] = 0x00;
+        out_data[15] = 0x00;
+
+        std::uint8_t i;
+        for(i = 0; i < 8; i++)
+        {
+            // TODO
+            /* Switch[i] - Voltage */
+            /* Switch[i] - Current */
+            /* Switch[i] - Status */
+        }
+        
+        /* CRC */
+        out_data[64] = generic_eps_crc8(out_data, 64);
     }
 
-
     /* Protocol callback */
-    void Generic_epsHardwareModel::uart_read_callback(const uint8_t *buf, size_t len)
+    std::uint8_t Generic_epsHardwareModel::determine_i2c_response_for_request(const std::vector<uint8_t>& in_data)
     {
         std::vector<uint8_t> out_data; 
         std::uint8_t valid = GENERIC_EPS_SIM_SUCCESS;
         
-        std::uint32_t rcv_config;
-
         /* Retrieve data and log in man readable format */
-        std::vector<uint8_t> in_data(buf, buf + len);
-        sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  REQUEST %s",
+        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  REQUEST %s",
             SimIHardwareModel::uint8_vector_to_hex_string(in_data).c_str());
 
         /* Check simulator is enabled */
         if (_enabled != GENERIC_EPS_SIM_SUCCESS)
         {
-            sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Generic_eps sim disabled!");
+            sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Generic_eps sim disabled!");
             valid = GENERIC_EPS_SIM_ERROR;
         }
         else
         {
             /* Check if message is incorrect size */
-            if (in_data.size() != 9)
+            if (in_data.size() != 3)
             {
-                sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Invalid command size of %d received!", in_data.size());
+                sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Invalid command size of %d received!", in_data.size());
                 valid = GENERIC_EPS_SIM_ERROR;
             }
             else
             {
-                /* Check header - 0xDEAD */
-                if ((in_data[0] != 0xDE) || (in_data[1] !=0xAD))
+                /* Check CRC */
+                if (in_data[2] == generic_eps_crc8(in_data, 2))
                 {
-                    sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Header incorrect!");
+                    sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  CRC8  of %d incorrect!", in_data[2]);
                     valid = GENERIC_EPS_SIM_ERROR;
                 }
                 else
                 {
-                    /* Check trailer - 0xBEEF */
-                    if ((in_data[7] != 0xBE) || (in_data[8] !=0xEF))
+                    if ((in_data[0] < 8) && (!((in_data[1] == 0x00) || (in_data[1] == 0xAA))))
                     {
-                        sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Trailer incorrect!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch %d state of 0x%02x invalid!", in_data[0], in_data[1]);
                         valid = GENERIC_EPS_SIM_ERROR;
-                    }
-                    else
-                    {
-                        /* Increment count as valid command format received */
-                        _count++;
                     }
                 }
             }
@@ -267,56 +299,104 @@ namespace Nos3
             if (valid == GENERIC_EPS_SIM_SUCCESS)
             {   
                 /* Process command */
-                switch (in_data[2])
+                switch (in_data[0])
                 {
-                    case 0:
-                        /* NOOP */
-                        sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  NOOP command received!");
+                    case 0x00:
+                        /* Switch 0 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[0]._status = in_data[1];
                         break;
 
-                case 1:
-                        /* Request HK */
-                        sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Send HK command received!");
-                        create_generic_eps_hk(out_data);
+                    case 0x01:
+                        /* Switch 1 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[1]._status = in_data[1];
                         break;
 
-                    case 2:
-                        /* Request data */
-                        sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Send data command received!");
+                    case 0x02:
+                        /* Switch 2 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[2]._status = in_data[1];
+                        break;
+
+                    case 0x03:
+                        /* Switch 3 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[3]._status = in_data[1];
+                        break;
+
+                    case 0x04:
+                        /* Switch 4 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[4]._status = in_data[1];
+                        break;
+
+                    case 0x05:
+                        /* Switch 5 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[5]._status = in_data[1];
+                        break;
+
+                    case 0x06:
+                        /* Switch 6 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[6]._status = in_data[1];
+                        break;
+
+                    case 0x07:
+                        /* Switch 7 */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        _switch[7]._status = in_data[1];
+                        break;
+
+                    case 0x70:
+                        /* Telemetry Request */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Telemetry request command received!");
                         create_generic_eps_data(out_data);
                         break;
 
-                    case 3:
-                        /* Configuration */
-                        sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Configuration command received!");
-                        _config  = in_data[3] << 24;
-                        _config |= in_data[4] << 16;
-                        _config |= in_data[5] << 8;
-                        _config |= in_data[6];
+                    case 0xAA:
+                        /* Reset */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Reset command received!");
+                        // TODO 
                         break;
                     
                     default:
                         /* Unused command code */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Unused command %d received!", in_data[0]);
                         valid = GENERIC_EPS_SIM_ERROR;
-                        sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  Unused command %d received!", in_data[2]);
                         break;
                 }
             }
         }
+        return valid;
+    }
 
-        /* Increment count and echo command since format valid */
-        if (valid == GENERIC_EPS_SIM_SUCCESS)
+    I2CSlaveConnection::I2CSlaveConnection(Generic_epsHardwareModel* hm,
+        int bus_address, std::string connection_string, std::string bus_name)
+        : NosEngine::I2C::I2CSlave(bus_address, connection_string, bus_name)
+    {
+        _hardware_model = hm;
+    }
+
+    size_t I2CSlaveConnection::i2c_read(uint8_t *rbuf, size_t rlen)
+    {
+        size_t num_read;
+        sim_logger->debug("i2c_read: 0x%02x", _i2c_out_data); // log data
+        if(rlen <= 1)
         {
-            _count++;
-            _uart_connection->write(&in_data[0], in_data.size());
-
-            /* Send response if existing */
-            if (out_data.size() > 0)
-            {
-                sim_logger->debug("Generic_epsHardwareModel::uart_read_callback:  REPLY %s",
-                    SimIHardwareModel::uint8_vector_to_hex_string(out_data).c_str());
-                _uart_connection->write(&out_data[0], out_data.size());
-            }
+            rbuf[0] = _i2c_out_data;
+            num_read = 1;
         }
+        return num_read;
+    }
+
+    size_t I2CSlaveConnection::i2c_write(const uint8_t *wbuf, size_t wlen)
+    {
+        std::vector<uint8_t> in_data(wbuf, wbuf + wlen);
+        sim_logger->debug("i2c_write: %s",
+            SimIHardwareModel::uint8_vector_to_hex_string(in_data).c_str()); // log data
+        _i2c_out_data = _hardware_model->determine_i2c_response_for_request(in_data);
+        return wlen;
     }
 }

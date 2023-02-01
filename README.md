@@ -81,18 +81,36 @@ The default configuration returns data that mimics standard laboratory condition
     <hardware-model>
         <type>GENERIC_EPS</type>
         <connections>
-            <connection><type>command</type>
+            <connection>
+                <type>command</type>
                 <bus-name>command</bus-name>
                 <node-name>generic_eps-sim-command-node</node-name>
             </connection>
-            <connection><type>i2c</type>
+            <connection>
+                <type>i2c</type>
                 <bus-name>i2c_1</bus-name>
+                <bus-address>0x2B</bus-address>
                 <node-port>10</node-port>
             </connection>
         </connections>
         <data-provider>
             <type>GENERIC_EPS_PROVIDER</type>
         </data-provider>
+        <physical>
+            <switch_0>
+                <node-name>unknown-sim-command-node</node-name>
+                <voltage>3.3</voltage>
+                <current>0.25</current>
+                <hex_status>0000/hex_status>
+            </switch_0>
+            ...
+            <switch_7>
+                <node-name>unknown-sim-command-node</node-name>
+                <voltage>12.0</voltage>
+                <current>1.23</current>
+                <hex_status>00AA</hex_status>
+            </switch_7>
+        </physical>
     </hardware-model>
 </simulator>
 ```
