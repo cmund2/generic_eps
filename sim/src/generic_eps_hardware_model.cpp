@@ -40,7 +40,7 @@ namespace Nos3
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on I2C bus name %s as address 0x%02x.", bus_name.c_str(), bus_address);
 
         /* Get on the command bus - EPS receives commands here */
-        std::string time_bus_name = "command";
+        _time_bus_name = "command";
         if (config.get_child_optional("hardware-model.connections")) 
         {
             /* Loop through the connections for the hardware model connections */
@@ -50,25 +50,26 @@ namespace Nos3
                 /* v.second is the child tree */
                 if (v.second.get("type", "").compare("time") == 0) // 
                 {
-                    time_bus_name = v.second.get("bus-name", "command");
+                    _time_bus_name = v.second.get("bus-name", "command");
                     /* Found it... don't need to go through any more items*/
                     break; 
                 }
             }
         }
-        _time_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
-        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", time_bus_name.c_str());
+        _time_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, _time_bus_name));
+        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _time_bus_name.c_str());
 
         /* Get on the sim bus - EPS sends commands here */
-        _sim_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
-        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on bus named %s.", time_bus_name.c_str());
+        _sim_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, _time_bus_name));
+        _sim_node = _sim_bus->get_or_create_data_node("generic-eps-sim-commander");
+        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on bus named %s.", _time_bus_name.c_str());
 
         /* Initialize status for battery and bus */
         std::string battv, battv_temp, solararray, solararray_temp;
-        battv = config.get("hardware-model.physical.bus.battery-voltage", "24.0");
-        battv_temp = config.get("hardware-model.physical.bus.battery-temperature", "25.0");
-        solararray = config.get("hardware-model.physical.bus.solar-array-voltage", "32.0");
-        solararray_temp = config.get("hardware-model.physical.bus.solar-array-temperature", "80.0");
+        battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
+        battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
+        solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
+        solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
@@ -89,45 +90,45 @@ namespace Nos3
         */
 
         /* Initialize status for each switch */
-        _init_switch[0]._node_name = config.get("hardware-model.physical.switch-0.node-name", "switch-0");
-        _init_switch[0]._voltage = config.get("hardware-model.physical.switch-0.voltage", "3.30");
-        _init_switch[0]._current = config.get("hardware-model.physical.switch-0.current", "0.25");
-        _init_switch[0]._state = config.get("hardware-model.physical.switch-0.hex-status", "0000");
+        _init_switch[0]._node_name = config.get("simulator.hardware-model.physical.switch-0.node-name", "switch-0");
+        _init_switch[0]._voltage = config.get("simulator.hardware-model.physical.switch-0.voltage", "3.30");
+        _init_switch[0]._current = config.get("simulator.hardware-model.physical.switch-0.current", "0.25");
+        _init_switch[0]._state = config.get("simulator.hardware-model.physical.switch-0.hex-status", "0000");
 
-        _init_switch[1]._node_name = config.get("hardware-model.physical.switch-1.node-name", "switch-1");
-        _init_switch[1]._voltage = config.get("hardware-model.physical.switch-1.voltage", "3.30");
-        _init_switch[1]._current = config.get("hardware-model.physical.switch-1.current", "0.10");
-        _init_switch[1]._state = config.get("hardware-model.physical.switch-1.hex-status", "0000");
+        _init_switch[1]._node_name = config.get("simulator.hardware-model.physical.switch-1.node-name", "switch-1");
+        _init_switch[1]._voltage = config.get("simulator.hardware-model.physical.switch-1.voltage", "3.30");
+        _init_switch[1]._current = config.get("simulator.hardware-model.physical.switch-1.current", "0.10");
+        _init_switch[1]._state = config.get("simulator.hardware-model.physical.switch-1.hex-status", "0000");
 
-        _init_switch[2]._node_name = config.get("hardware-model.physical.switch-2.node-name", "switch-2");
-        _init_switch[2]._voltage = config.get("hardware-model.physical.switch-2.voltage", "5.00");
-        _init_switch[2]._current = config.get("hardware-model.physical.switch-2.current", "0.20");
-        _init_switch[2]._state = config.get("hardware-model.physical.switch-2.hex-status", "0000");
+        _init_switch[2]._node_name = config.get("simulator.hardware-model.physical.switch-2.node-name", "switch-2");
+        _init_switch[2]._voltage = config.get("simulator.hardware-model.physical.switch-2.voltage", "5.00");
+        _init_switch[2]._current = config.get("simulator.hardware-model.physical.switch-2.current", "0.20");
+        _init_switch[2]._state = config.get("simulator.hardware-model.physical.switch-2.hex-status", "0000");
 
-        _init_switch[3]._node_name = config.get("hardware-model.physical.switch-3.node-name", "switch-3");
-        _init_switch[3]._voltage = config.get("hardware-model.physical.switch-3.voltage", "5.00");
-        _init_switch[3]._current = config.get("hardware-model.physical.switch-3.current", "0.30");
-        _init_switch[3]._state = config.get("hardware-model.physical.switch-3.hex-status", "0000");
+        _init_switch[3]._node_name = config.get("simulator.hardware-model.physical.switch-3.node-name", "switch-3");
+        _init_switch[3]._voltage = config.get("simulator.hardware-model.physical.switch-3.voltage", "5.00");
+        _init_switch[3]._current = config.get("simulator.hardware-model.physical.switch-3.current", "0.30");
+        _init_switch[3]._state = config.get("simulator.hardware-model.physical.switch-3.hex-status", "0000");
 
-        _init_switch[4]._node_name = config.get("hardware-model.physical.switch-4.node-name", "switch-4");
-        _init_switch[4]._voltage = config.get("hardware-model.physical.switch-4.voltage", "12.00");
-        _init_switch[4]._current = config.get("hardware-model.physical.switch-4.current", "0.40");
-        _init_switch[4]._state = config.get("hardware-model.physical.switch-4.hex-status", "0000");
+        _init_switch[4]._node_name = config.get("simulator.hardware-model.physical.switch-4.node-name", "switch-4");
+        _init_switch[4]._voltage = config.get("simulator.hardware-model.physical.switch-4.voltage", "12.00");
+        _init_switch[4]._current = config.get("simulator.hardware-model.physical.switch-4.current", "0.40");
+        _init_switch[4]._state = config.get("simulator.hardware-model.physical.switch-4.hex-status", "0000");
 
-        _init_switch[5]._node_name = config.get("hardware-model.physical.switch-5.node-name", "switch-5");
-        _init_switch[5]._voltage = config.get("hardware-model.physical.switch-5.voltage", "12.00");
-        _init_switch[5]._current = config.get("hardware-model.physical.switch-5.current", "0.50");
-        _init_switch[5]._state = config.get("hardware-model.physical.switch-5.hex-status", "0000");
+        _init_switch[5]._node_name = config.get("simulator.hardware-model.physical.switch-5.node-name", "switch-5");
+        _init_switch[5]._voltage = config.get("simulator.hardware-model.physical.switch-5.voltage", "12.00");
+        _init_switch[5]._current = config.get("simulator.hardware-model.physical.switch-5.current", "0.50");
+        _init_switch[5]._state = config.get("simulator.hardware-model.physical.switch-5.hex-status", "0000");
 
-        _init_switch[6]._node_name = config.get("hardware-model.physical.switch-6.node-name", "switch-6");
-        _init_switch[6]._voltage = config.get("hardware-model.physical.switch-6.voltage", "3.30");
-        _init_switch[6]._current = config.get("hardware-model.physical.switch-6.current", "0.60");
-        _init_switch[6]._state = config.get("hardware-model.physical.switch-6.hex-status", "0000");
+        _init_switch[6]._node_name = config.get("simulator.hardware-model.physical.switch-6.node-name", "switch-6");
+        _init_switch[6]._voltage = config.get("simulator.hardware-model.physical.switch-6.voltage", "3.30");
+        _init_switch[6]._current = config.get("simulator.hardware-model.physical.switch-6.current", "0.60");
+        _init_switch[6]._state = config.get("simulator.hardware-model.physical.switch-6.hex-status", "0000");
 
-        _init_switch[7]._node_name = config.get("hardware-model.physical.switch-7.node-name", "switch-7");
-        _init_switch[7]._voltage = config.get("hardware-model.physical.switch-7.voltage", "5.00");
-        _init_switch[7]._current = config.get("hardware-model.physical.switch-7.current", "0.70");
-        _init_switch[7]._state = config.get("hardware-model.physical.switch-7.hex-status", "0000");
+        _init_switch[7]._node_name = config.get("simulator.hardware-model.physical.switch-7.node-name", "switch-7");
+        _init_switch[7]._voltage = config.get("simulator.hardware-model.physical.switch-7.voltage", "5.00");
+        _init_switch[7]._current = config.get("simulator.hardware-model.physical.switch-7.current", "0.70");
+        _init_switch[7]._state = config.get("simulator.hardware-model.physical.switch-7.hex-status", "0000");
 
         std::uint8_t i;
         for (i = 0; i < 8; i++)
@@ -156,7 +157,7 @@ namespace Nos3
         delete _generic_eps_dp;
         _generic_eps_dp = nullptr;
 
-        /* The bus will clean up the time node */
+        /* The bus will clean up the time and sim nodes */
     }
 
 
@@ -194,6 +195,41 @@ namespace Nos3
         /* Send a reply */
         sim_logger->info("Generic_epsHardwareModel::command_callback:  Sending reply: %s.", response.c_str());
         _command_node->send_reply_message_async(msg, response.size(), response.c_str());
+    }
+
+    void Generic_epsHardwareModel::eps_switch_update(const std::uint8_t sw_num, uint8_t sw_status)
+    {
+        /* Is the switch valid? */
+        if (sw_num < 8)
+        {
+            /* Is the status valid? */
+            if ((sw_status == 0x00) || (sw_status == 0xAA))
+            {
+                /* Prepare the simulator bus with the switch node */
+                //_sim_bus.reset(new NosEngine::Client::Bus(_hub, _switch[sw_num], _time_bus_name));
+
+                /* Use the simulator bus to set the state in other simulators */
+                if (sw_status == 0x00)
+                {
+                    _sim_node->send_non_confirmed_message_async(_init_switch[sw_num]._node_name, 7, "DISABLE");
+                }
+                else
+                {
+                    _sim_node->send_non_confirmed_message_async(_init_switch[sw_num]._node_name, 6, "ENABLE");
+                }
+                
+                /* Set the values internally */
+                _switch[sw_num]._status = sw_status;
+            }
+            else
+            {
+                sim_logger->debug("Generic_epsHardwareModel::eps_switch_update:  Set state of 0x%02x invalid! Expected 0x00 or 0xAA", sw_status);
+            }
+        }
+        else
+        {
+            sim_logger->debug("Generic_epsHardwareModel::eps_switch_update:  Switch number %d is invalid!", sw_num);
+        }
     }
 
     std::uint8_t Generic_epsHardwareModel::generic_eps_crc8(const std::vector<uint8_t>& crc_data, std::uint32_t crc_size)
@@ -351,51 +387,16 @@ namespace Nos3
                 switch (in_data[0])
                 {
                     case 0x00:
-                        /* Switch 0 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state to 0x%02x command received!", in_data[1]);
-                        _switch[0]._status = in_data[1];
-                        break;
-
                     case 0x01:
-                        /* Switch 1 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 1 state to 0x%02x command received!", in_data[1]);
-                        _switch[1]._status = in_data[1];
-                        break;
-
                     case 0x02:
-                        /* Switch 2 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 2 state to 0x%02x command received!", in_data[1]);
-                        _switch[2]._status = in_data[1];
-                        break;
-
                     case 0x03:
-                        /* Switch 3 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 3 state to 0x%02x command received!", in_data[1]);
-                        _switch[3]._status = in_data[1];
-                        break;
-
                     case 0x04:
-                        /* Switch 4 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 4 state to 0x%02x command received!", in_data[1]);
-                        _switch[4]._status = in_data[1];
-                        break;
-
                     case 0x05:
-                        /* Switch 5 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 5 state to 0x%02x command received!", in_data[1]);
-                        _switch[5]._status = in_data[1];
-                        break;
-
                     case 0x06:
-                        /* Switch 6 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 6 state to 0x%02x command received!", in_data[1]);
-                        _switch[6]._status = in_data[1];
-                        break;
-
                     case 0x07:
-                        /* Switch 7 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 7 state to 0x%02x command received!", in_data[1]);
-                        _switch[7]._status = in_data[1];
+                        /* Note intentional fall through to this point */
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch %d state to 0x%02x command received!", in_data[0], in_data[1]);
+                        eps_switch_update(in_data[0], in_data[1]);
                         break;
 
                     case 0x70:

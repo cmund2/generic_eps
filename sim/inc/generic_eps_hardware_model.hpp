@@ -10,6 +10,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <Client/Bus.hpp>
+#include <Client/DataNode.hpp>
 #include <I2C/Client/I2CSlave.hpp>
 
 #include <sim_i_data_provider.hpp>
@@ -44,15 +45,20 @@ namespace Nos3
     private:
         /* Private helper methods */
         void command_callback(NosEngine::Common::Message msg); /* Handle backdoor commands and time tick to the simulator */
+        void eps_switch_update(const std::uint8_t sw_num, uint8_t sw_status);
         std::uint8_t generic_eps_crc8(const std::vector<uint8_t>& crc_data, std::uint32_t crc_size);
         void create_generic_eps_data(std::vector<uint8_t>& out_data); 
 
         /* Private data members */
         class I2CSlaveConnection*                           _i2c_slave_connection;
+        
+        std::string                                         _time_bus_name;
         std::unique_ptr<NosEngine::Client::Bus>             _time_bus; /* Standard */
-        std::unique_ptr<NosEngine::Client::Bus>             _sim_bus;
 
-        SimIDataProvider*                                   _generic_eps_dp; /* Only needed if the sim has a data provider */
+        std::unique_ptr<NosEngine::Client::Bus>             _sim_bus;
+        NosEngine::Client::DataNode*                        _sim_node;
+
+        SimIDataProvider*                                   _generic_eps_dp;
 
         /* Internal switch data */
         struct Init_Switch_State
