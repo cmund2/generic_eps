@@ -39,7 +39,7 @@ namespace Nos3
         /* Constructor and destructor */
         Generic_epsHardwareModel(const boost::property_tree::ptree& config);
         ~Generic_epsHardwareModel(void);
-        std::uint8_t determine_i2c_response_for_request(const std::vector<uint8_t>& in_data); 
+        std::uint8_t determine_i2c_response_for_request(const std::vector<uint8_t>& in_data, std::vector<uint8_t>& out_data); 
 
     private:
         /* Private helper methods */
@@ -63,20 +63,26 @@ namespace Nos3
             std::string   _state;
         };
 
-        struct EPS_Switch
+        struct EPS_Rail
         {
             std::uint16_t _voltage;
             std::uint16_t _current;
             std::uint16_t _status;
+            std::uint16_t _temperature;
         };
 
         Init_Switch_State                                   _init_switch[8];
-        EPS_Switch                                          _switch[8];
+        EPS_Rail                                            _switch[8];
+        EPS_Rail                                            _bus[5];
+                                                                /*
+                                                                0 - Battery
+                                                                1 - 3.3v
+                                                                2 - 5.0v
+                                                                3 - 12.0v
+                                                                4 - Solar Array
+                                                                */
 
         std::uint8_t                                        _enabled;
-        std::uint32_t                                       _count;
-        std::uint32_t                                       _config;
-        std::uint32_t                                       _status;
     };
 
     class I2CSlaveConnection : public NosEngine::I2C::I2CSlave
@@ -87,7 +93,8 @@ namespace Nos3
         size_t i2c_write(const uint8_t *wbuf, size_t wlen);
     private:
         Generic_epsHardwareModel* _hardware_model;
-        std::uint8_t _i2c_out_data;
+        std::uint8_t _i2c_read_valid;
+        std::vector<uint8_t> _i2c_out_data;
     };
 }
 

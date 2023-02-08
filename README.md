@@ -97,19 +97,25 @@ The default configuration returns data that mimics standard laboratory condition
             <type>GENERIC_EPS_PROVIDER</type>
         </data-provider>
         <physical>
-            <switch_0>
+            <bus>
+                <battery-voltage>24.0</battery-voltage>
+                <battery-temperature>30.0</battery-temperature>
+                <solar-array-voltage>32.0</solar-array-voltage>
+                <solar-array-temperature>80.0</solar-array-temperature>
+            </bus>
+            <switch-0>
                 <node-name>unknown-sim-command-node</node-name>
                 <voltage>3.3</voltage>
                 <current>0.25</current>
-                <hex_status>0000/hex_status>
-            </switch_0>
+                <hex-status>0000</hex-status>
+            </switch-0>
             ...
-            <switch_7>
+            <switch-7>
                 <node-name>unknown-sim-command-node</node-name>
                 <voltage>12.0</voltage>
                 <current>1.23</current>
-                <hex_status>00AA</hex_status>
-            </switch_7>
+                <hex-status>00AA</hex-status>
+            </switch-7>
         </physical>
     </hardware-model>
 </simulator>

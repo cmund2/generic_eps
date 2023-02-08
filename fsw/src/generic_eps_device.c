@@ -56,7 +56,7 @@ int32_t GENERIC_EPS_CommandDevice(int32_t handle, uint8_t cmd, uint8_t value)
         /* Prepare command */
         write_data[0] = cmd;
         write_data[1] = value;
-        write_data[2] = GENERIC_EPS_CRC8(write_data, 1);
+        write_data[2] = GENERIC_EPS_CRC8(write_data, 2);
 
         /* Initiate transaction */
         i2c_master_transaction(handle, GENERIC_EPS_CFG_I2C_ADDRESS,
@@ -102,31 +102,45 @@ int32_t GENERIC_EPS_RequestHK(int32_t handle, GENERIC_EPS_Device_HK_tlm_t* data)
     if (calc_crc == read_data[GENERIC_EPS_DEVICE_HK_LEN])
     {
         /* Interpret Data */
-        data->BatteryVoltage        = (read_data[0] << 8) & read_data[1];
-        data->BatteryTemperature    = (read_data[2] << 8) & read_data[3];
+        data->BatteryVoltage        = (read_data[0] << 8) | read_data[1];
+        data->BatteryTemperature    = (read_data[2] << 8) | read_data[3];
 
-        data->Bus3p3Voltage         = (read_data[4] << 8) & read_data[5];
-        data->Bus5p0Voltage         = (read_data[6] << 8) & read_data[7];
-        data->Bus12Voltage          = (read_data[8] << 8) & read_data[9];
-        data->EPSTemperature        = (read_data[10] << 8) & read_data[11];
+        data->Bus3p3Voltage         = (read_data[4] << 8) | read_data[5];
+        data->Bus5p0Voltage         = (read_data[6] << 8) | read_data[7];
+        data->Bus12Voltage          = (read_data[8] << 8) | read_data[9];
+        data->EPSTemperature        = (read_data[10] << 8) | read_data[11];
 
-        data->SolarArrayVoltage     = (read_data[12] << 8) & read_data[13];
-        data->SolarArrayTemperature = (read_data[14] << 8) & read_data[15];
+        data->SolarArrayVoltage     = (read_data[12] << 8) | read_data[13];
+        data->SolarArrayTemperature = (read_data[14] << 8) | read_data[15];
 
         for(uint8_t i = 0; i < 8; i++)
         {
-            data->Switch[i].Voltage = (read_data[offset] << 8)   & read_data[offset+1];
-            data->Switch[i].Current = (read_data[offset+2] << 8) & read_data[offset+3];
-            data->Switch[i].Status  = (read_data[offset+4] << 8) & read_data[offset+5];
+            data->Switch[i].Voltage = (read_data[offset] << 8)   | read_data[offset+1];
+            data->Switch[i].Current = (read_data[offset+2] << 8) | read_data[offset+3];
+            data->Switch[i].Status  = (read_data[offset+4] << 8) | read_data[offset+5];
             offset = offset + 6;
         }
     }
     else
     {
+        status = OS_ERROR;
         #ifdef GENERIC_EPS_CFG_DEBUG
-            OS_printf("  GENERIC_EPS_RequestHK: CRC error \n");
+            OS_printf("  GENERIC_EPS_RequestHK: CRC error, expected 0x%02x and received 0x%02x \n", calc_crc, read_data[GENERIC_EPS_DEVICE_HK_LEN]);
         #endif 
     }
+
+    #ifdef GENERIC_EPS_CFG_DEBUG
+        OS_printf("  GENERIC_EPS_RequestHK read: ");
+        for(uint8_t i; i < GENERIC_EPS_DEVICE_HK_LEN+1; i++)
+        {
+            OS_printf("0x%02x ",read_data[i]);
+        }
+        OS_printf("\n");
+        OS_printf("  GENERIC_EPS_RequestHK: Battery Voltage = 0x%04x \n", data->BatteryVoltage);
+        OS_printf("  GENERIC_EPS_RequestHK: Battery Temperature = 0x%04x \n", data->BatteryTemperature);
+        OS_printf("  GENERIC_EPS_RequestHK: Bus 3.3V = 0x%04x \n", data->Bus3p3Voltage);
+    #endif
+
     return status;
 }
 

@@ -6,7 +6,7 @@ namespace Nos3
 
     extern ItcLogger::Logger *sim_logger;
 
-    Generic_epsHardwareModel::Generic_epsHardwareModel(const boost::property_tree::ptree& config) : SimIHardwareModel(config) 
+    Generic_epsHardwareModel::Generic_epsHardwareModel(const boost::property_tree::ptree& config) : SimIHardwareModel(config), _enabled(GENERIC_EPS_SIM_SUCCESS)
     {
         /* Get the NOS engine connection string */
         std::string connection_string = config.get("common.nos-connection-string", "tcp://127.0.0.1:12001"); 
@@ -63,54 +63,83 @@ namespace Nos3
         _sim_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on bus named %s.", time_bus_name.c_str());
 
+        /* Initialize status for battery and bus */
+        std::string battv, battv_temp, solararray, solararray_temp;
+        battv = config.get("hardware-model.physical.bus.battery-voltage", "24.0");
+        battv_temp = config.get("hardware-model.physical.bus.battery-temperature", "25.0");
+        solararray = config.get("hardware-model.physical.bus.solar-array-voltage", "32.0");
+        solararray_temp = config.get("hardware-model.physical.bus.solar-array-temperature", "80.0");
+        
+        _bus[0]._voltage = atoi(battv.c_str()) * 1000;
+        _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
+        _bus[1]._voltage = 3.3 * 1000;
+        _bus[2]._voltage = 5.0 * 1000;
+        _bus[3]._voltage = 12.0 * 1000;
+        _bus[4]._voltage = atoi(solararray.c_str()) * 1000;
+        _bus[4]._temperature = (atoi(solararray_temp.c_str()) + 60) * 100;
+
+        /*
+        sim_logger->info("  Initial _bus[0]._voltage = 0x%04x", _bus[0]._voltage);
+        sim_logger->info("  Initial _bus[0]._temperature = 0x%04x", _bus[0]._temperature);
+        sim_logger->info("  Initial _bus[1]._voltage = 0x%04x", _bus[1]._voltage);
+        sim_logger->info("  Initial _bus[2]._voltage = 0x%04x", _bus[2]._voltage);
+        sim_logger->info("  Initial _bus[3]._voltage = 0x%04x", _bus[3]._voltage);
+        sim_logger->info("  Initial _bus[4]._voltage = 0x%04x", _bus[4]._voltage);
+        sim_logger->info("  Initial _bus[4]._temperature = 0x%04x", _bus[4]._temperature);
+        */
+
         /* Initialize status for each switch */
-        _init_switch[0]._node_name = config.get("hardware-model.connections.switch_0.node-name", "switch_0");
-        _init_switch[0]._voltage = config.get("hardware-model.connections.switch_0.voltage", "3.3");
-        _init_switch[0]._current = config.get("hardware-model.connections.switch_0.current", "0.25");
-        _init_switch[0]._state = config.get("hardware-model.connections.switch_0.hex_status", "0000");
+        _init_switch[0]._node_name = config.get("hardware-model.physical.switch-0.node-name", "switch-0");
+        _init_switch[0]._voltage = config.get("hardware-model.physical.switch-0.voltage", "3.30");
+        _init_switch[0]._current = config.get("hardware-model.physical.switch-0.current", "0.25");
+        _init_switch[0]._state = config.get("hardware-model.physical.switch-0.hex-status", "0000");
 
-        _init_switch[1]._node_name = config.get("hardware-model.connections.switch_1.node-name", "switch_1");
-        _init_switch[1]._voltage = config.get("hardware-model.connections.switch_1.voltage", "3.3");
-        _init_switch[1]._current = config.get("hardware-model.connections.switch_1.current", "0.1");
-        _init_switch[1]._state = config.get("hardware-model.connections.switch_1.hex_status", "0000");
+        _init_switch[1]._node_name = config.get("hardware-model.physical.switch-1.node-name", "switch-1");
+        _init_switch[1]._voltage = config.get("hardware-model.physical.switch-1.voltage", "3.30");
+        _init_switch[1]._current = config.get("hardware-model.physical.switch-1.current", "0.10");
+        _init_switch[1]._state = config.get("hardware-model.physical.switch-1.hex-status", "0000");
 
-        _init_switch[2]._node_name = config.get("hardware-model.connections.switch_2.node-name", "switch_2");
-        _init_switch[2]._voltage = config.get("hardware-model.connections.switch_2.voltage", "5.0");
-        _init_switch[2]._current = config.get("hardware-model.connections.switch_2.current", "0.2");
-        _init_switch[2]._state = config.get("hardware-model.connections.switch_2.hex_status", "0000");
+        _init_switch[2]._node_name = config.get("hardware-model.physical.switch-2.node-name", "switch-2");
+        _init_switch[2]._voltage = config.get("hardware-model.physical.switch-2.voltage", "5.00");
+        _init_switch[2]._current = config.get("hardware-model.physical.switch-2.current", "0.20");
+        _init_switch[2]._state = config.get("hardware-model.physical.switch-2.hex-status", "0000");
 
-        _init_switch[3]._node_name = config.get("hardware-model.connections.switch_3.node-name", "switch_3");
-        _init_switch[3]._voltage = config.get("hardware-model.connections.switch_3.voltage", "5.0");
-        _init_switch[3]._current = config.get("hardware-model.connections.switch_3.current", "0.3");
-        _init_switch[3]._state = config.get("hardware-model.connections.switch_3.hex_status", "0000");
+        _init_switch[3]._node_name = config.get("hardware-model.physical.switch-3.node-name", "switch-3");
+        _init_switch[3]._voltage = config.get("hardware-model.physical.switch-3.voltage", "5.00");
+        _init_switch[3]._current = config.get("hardware-model.physical.switch-3.current", "0.30");
+        _init_switch[3]._state = config.get("hardware-model.physical.switch-3.hex-status", "0000");
 
-        _init_switch[4]._node_name = config.get("hardware-model.connections.switch_4.node-name", "switch_4");
-        _init_switch[4]._voltage = config.get("hardware-model.connections.switch_4.voltage", "12.0");
-        _init_switch[4]._current = config.get("hardware-model.connections.switch_4.current", "0.4");
-        _init_switch[4]._state = config.get("hardware-model.connections.switch_4.hex_status", "0000");
+        _init_switch[4]._node_name = config.get("hardware-model.physical.switch-4.node-name", "switch-4");
+        _init_switch[4]._voltage = config.get("hardware-model.physical.switch-4.voltage", "12.00");
+        _init_switch[4]._current = config.get("hardware-model.physical.switch-4.current", "0.40");
+        _init_switch[4]._state = config.get("hardware-model.physical.switch-4.hex-status", "0000");
 
-        _init_switch[5]._node_name = config.get("hardware-model.connections.switch_5.node-name", "switch_5");
-        _init_switch[5]._voltage = config.get("hardware-model.connections.switch_5.voltage", "12.0");
-        _init_switch[5]._current = config.get("hardware-model.connections.switch_5.current", "0.5");
-        _init_switch[5]._state = config.get("hardware-model.connections.switch_5.hex_status", "0000");
+        _init_switch[5]._node_name = config.get("hardware-model.physical.switch-5.node-name", "switch-5");
+        _init_switch[5]._voltage = config.get("hardware-model.physical.switch-5.voltage", "12.00");
+        _init_switch[5]._current = config.get("hardware-model.physical.switch-5.current", "0.50");
+        _init_switch[5]._state = config.get("hardware-model.physical.switch-5.hex-status", "0000");
 
-        _init_switch[6]._node_name = config.get("hardware-model.connections.switch_6.node-name", "switch_6");
-        _init_switch[6]._voltage = config.get("hardware-model.connections.switch_6.voltage", "3.3");
-        _init_switch[6]._current = config.get("hardware-model.connections.switch_6.current", "0.6");
-        _init_switch[6]._state = config.get("hardware-model.connections.switch_6.hex_status", "0000");
+        _init_switch[6]._node_name = config.get("hardware-model.physical.switch-6.node-name", "switch-6");
+        _init_switch[6]._voltage = config.get("hardware-model.physical.switch-6.voltage", "3.30");
+        _init_switch[6]._current = config.get("hardware-model.physical.switch-6.current", "0.60");
+        _init_switch[6]._state = config.get("hardware-model.physical.switch-6.hex-status", "0000");
 
-        _init_switch[7]._node_name = config.get("hardware-model.connections.switch_7.node-name", "switch_7");
-        _init_switch[7]._voltage = config.get("hardware-model.connections.switch_7.voltage", "5.0");
-        _init_switch[7]._current = config.get("hardware-model.connections.switch_7.current", "0.7");
-        _init_switch[7]._state = config.get("hardware-model.connections.switch_7.hex_status", "0000");
+        _init_switch[7]._node_name = config.get("hardware-model.physical.switch-7.node-name", "switch-7");
+        _init_switch[7]._voltage = config.get("hardware-model.physical.switch-7.voltage", "5.00");
+        _init_switch[7]._current = config.get("hardware-model.physical.switch-7.current", "0.70");
+        _init_switch[7]._state = config.get("hardware-model.physical.switch-7.hex-status", "0000");
 
         std::uint8_t i;
         for (i = 0; i < 8; i++)
         {
-            _switch[i]._voltage = atoi((_init_switch[i]._voltage).c_str()) * 1000;
-            _switch[i]._current = atoi((_init_switch[i]._current).c_str()) * 1000;
+            _switch[i]._voltage = atof((_init_switch[i]._voltage).c_str()) * 1000;
+            _switch[i]._current = atof((_init_switch[i]._current).c_str()) * 1000;
             _switch[i]._status = std::stoi((_init_switch[i]._state).c_str(), 0, 16);
         }
+
+        sim_logger->info("    _switch[0]._voltage = %d", _switch[0]._voltage);
+        sim_logger->info("    _switch[0]._current = %d", _switch[0]._current);
+        sim_logger->info("    _switch[0]._status = 0x%04x", _switch[0]._status);
 
         /* Construction complete */
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Construction complete.");
@@ -154,22 +183,7 @@ namespace Nos3
         else if (command.compare("DISABLE") == 0) 
         {
             _enabled = GENERIC_EPS_SIM_ERROR;
-            _count = 0;
-            _config = 0;
-            _status = 0;
             response = "Generic_epsHardwareModel::command_callback:  Disabled";
-        }
-        else if (command.substr(0,7).compare("STATUS=") == 0)
-        {
-            try
-            {
-                _status = std::stod(command.substr(7));
-                response = "Generic_epsHardwareModel::command_callback:  Status set";
-            }
-            catch (...)
-            {
-                response = "Generic_epsHardwareModel::command_callback:  Status invalid";
-            }            
         }
         else if (command.compare("STOP") == 0) 
         {
@@ -209,56 +223,90 @@ namespace Nos3
     /* Custom function to prepare the Generic_eps Data */
     void Generic_epsHardwareModel::create_generic_eps_data(std::vector<uint8_t>& out_data)
     {
+        /* Update data */
         boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
+
 
         /* Prepare data size */
         out_data.resize(65, 0x00);
 
         /* Battery  - Voltage */
-        out_data[0] = 0xDE;
-        out_data[1] = 0xAD;
+        out_data[0] = (_bus[0]._voltage >> 8) & 0x00FF;
+        out_data[1] = _bus[0]._voltage & 0x00FF;
         /* Battery  - Temperature */
-        out_data[2] = 0x00; 
-        out_data[3] = 0x00;
+        out_data[2] = (_bus[0]._temperature >> 8) & 0x00FF; 
+        out_data[3] = _bus[0]._temperature & 0x00FF;
         
         /* EPS      - 3.3 Voltage */
-        out_data[4] = 0x00; 
-        out_data[5] = 0x00; 
+        out_data[4] = (_bus[1]._voltage >> 8) & 0x00FF; 
+        out_data[5] = _bus[1]._voltage & 0x00FF; 
         /* EPS      - 5.0 Voltage */
-        out_data[6] = 0x00;
-        out_data[7] = 0x00;
+        out_data[6] = (_bus[2]._voltage >> 8) & 0x00FF;
+        out_data[7] = _bus[2]._voltage & 0x00FF;
         /* EPS      - 12.0 Voltage */
-        out_data[8] = 0x00; 
-        out_data[9] = 0x00; 
+        out_data[8] = (_bus[3]._voltage >> 8) & 0x00FF; 
+        out_data[9] = _bus[3]._voltage & 0x00FF; 
         /* EPS      - Temperature */
-        out_data[10] = 0x00;
-        out_data[11] = 0x00;
+        out_data[10] = (_bus[3]._voltage >> 8) & 0x00FF;
+        out_data[11] = _bus[3]._voltage & 0x00FF;
 
         /* Solar Array - Voltage */
-        out_data[12] = 0x00;
-        out_data[13] = 0x00;
+        out_data[12] = (_bus[4]._voltage >> 8) & 0x00FF;
+        out_data[13] = _bus[4]._voltage & 0x00FF;
         /* Solar Array - Temperature */
-        out_data[14] = 0x00;
-        out_data[15] = 0x00;
+        out_data[14] = (_bus[4]._temperature >> 8) & 0x00FF;
+        out_data[15] = _bus[4]._temperature & 0x00FF;
 
-        std::uint8_t i;
+        std::uint16_t i = 0;
+        std::uint16_t offset = 16;
         for(i = 0; i < 8; i++)
         {
-            // TODO
-            /* Switch[i] - Voltage */
-            /* Switch[i] - Current */
+            if ((_switch[i]._status & 0x00FF) == 0x00AA)
+            {
+                /* Switch[i], ON - Voltage */
+                out_data[offset] = (_switch[i]._voltage >> 8) & 0x00FF;
+                out_data[offset+1] = _switch[i]._voltage & 0x00FF;
+                /* Switch[i], ON - Current */
+                out_data[offset+2] = (_switch[i]._current >> 8) & 0x00FF;
+                out_data[offset+3] = _switch[i]._current & 0x00FF;
+            }
+            else
+            {
+                /* Switch[i], OFF - Voltage */
+                out_data[offset] = 0x00;
+                out_data[offset+1] = 0x00;
+                /* Switch[i], OFF - Current */
+                out_data[offset+2] = 0x00;
+                out_data[offset+3] = 0x00;
+            }
             /* Switch[i] - Status */
+            out_data[offset+4] = (_switch[i]._status >> 8) & 0x00FF;
+            out_data[offset+5] = _switch[i]._status & 0x00FF;
+            offset = offset + 6;
         }
         
         /* CRC */
         out_data[64] = generic_eps_crc8(out_data, 64);
+
+        /*
+        sim_logger->info("  _bus[0]._voltage = 0x%04x", _bus[0]._voltage);
+        sim_logger->info("    (_bus[0]._voltage >> 8) & 0x00FF = 0x%02x", out_data[0]);
+        sim_logger->info("    _bus[0]._voltage & 0x00FF = 0x%02x", out_data[1]);
+        sim_logger->info("  _bus[0]._temperature = 0x%04x", _bus[0]._temperature);
+        sim_logger->info("  _bus[1]._voltage = 0x%04x", _bus[1]._voltage);
+        sim_logger->info("  _bus[2]._voltage = 0x%04x", _bus[2]._voltage);
+        sim_logger->info("  _bus[3]._voltage = 0x%04x", _bus[3]._voltage);
+        sim_logger->info("  _bus[4]._voltage = 0x%04x", _bus[4]._voltage);
+        sim_logger->info("  _bus[4]._temperature = 0x%04x", _bus[4]._temperature);
+        sim_logger->debug("create_generic_eps_data: %s", SimIHardwareModel::uint8_vector_to_hex_string(out_data).c_str());
+        */
     }
 
     /* Protocol callback */
-    std::uint8_t Generic_epsHardwareModel::determine_i2c_response_for_request(const std::vector<uint8_t>& in_data)
+    std::uint8_t Generic_epsHardwareModel::determine_i2c_response_for_request(const std::vector<uint8_t>& in_data, std::vector<uint8_t>& out_data)
     {
-        std::vector<uint8_t> out_data; 
         std::uint8_t valid = GENERIC_EPS_SIM_SUCCESS;
+        std::uint8_t calc_crc8;
         
         /* Retrieve data and log in man readable format */
         sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  REQUEST %s",
@@ -281,9 +329,10 @@ namespace Nos3
             else
             {
                 /* Check CRC */
-                if (in_data[2] == generic_eps_crc8(in_data, 2))
+                calc_crc8 = generic_eps_crc8(in_data, 2);
+                if (in_data[2] != calc_crc8)
                 {
-                    sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  CRC8  of %d incorrect!", in_data[2]);
+                    sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  CRC8  of 0x%02x incorrect, expected 0x%02x!", in_data[2], calc_crc8);
                     valid = GENERIC_EPS_SIM_ERROR;
                 }
                 else
@@ -303,49 +352,49 @@ namespace Nos3
                 {
                     case 0x00:
                         /* Switch 0 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state to 0x%02x command received!", in_data[1]);
                         _switch[0]._status = in_data[1];
                         break;
 
                     case 0x01:
                         /* Switch 1 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 1 state to 0x%02x command received!", in_data[1]);
                         _switch[1]._status = in_data[1];
                         break;
 
                     case 0x02:
                         /* Switch 2 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 2 state to 0x%02x command received!", in_data[1]);
                         _switch[2]._status = in_data[1];
                         break;
 
                     case 0x03:
                         /* Switch 3 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 3 state to 0x%02x command received!", in_data[1]);
                         _switch[3]._status = in_data[1];
                         break;
 
                     case 0x04:
                         /* Switch 4 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 4 state to 0x%02x command received!", in_data[1]);
                         _switch[4]._status = in_data[1];
                         break;
 
                     case 0x05:
                         /* Switch 5 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 5 state to 0x%02x command received!", in_data[1]);
                         _switch[5]._status = in_data[1];
                         break;
 
                     case 0x06:
                         /* Switch 6 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 6 state to 0x%02x command received!", in_data[1]);
                         _switch[6]._status = in_data[1];
                         break;
 
                     case 0x07:
                         /* Switch 7 */
-                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 0 state command received!");
+                        sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Set switch 7 state to 0x%02x command received!", in_data[1]);
                         _switch[7]._status = in_data[1];
                         break;
 
@@ -382,12 +431,23 @@ namespace Nos3
     size_t I2CSlaveConnection::i2c_read(uint8_t *rbuf, size_t rlen)
     {
         size_t num_read;
-        sim_logger->debug("i2c_read: 0x%02x", _i2c_out_data); // log data
-        if(rlen <= 1)
+        if(_i2c_read_valid == GENERIC_EPS_SIM_SUCCESS)
         {
-            rbuf[0] = _i2c_out_data;
-            num_read = 1;
+            for(num_read = 0; num_read < rlen; num_read++)
+            {
+                rbuf[num_read] = _i2c_out_data[num_read];
+            }
+            sim_logger->debug("i2c_read[%d]: %s", num_read, SimIHardwareModel::uint8_vector_to_hex_string(_i2c_out_data).c_str());
         }
+        else
+        {
+            for(num_read = 0; num_read < rlen; num_read++)
+            {
+                rbuf[num_read] = 0x00;
+            }
+            sim_logger->debug("i2c_read[%d]: Invalid (0x00)", num_read);
+        }
+
         return num_read;
     }
 
@@ -396,7 +456,7 @@ namespace Nos3
         std::vector<uint8_t> in_data(wbuf, wbuf + wlen);
         sim_logger->debug("i2c_write: %s",
             SimIHardwareModel::uint8_vector_to_hex_string(in_data).c_str()); // log data
-        _i2c_out_data = _hardware_model->determine_i2c_response_for_request(in_data);
+        _i2c_read_valid = _hardware_model->determine_i2c_response_for_request(in_data, _i2c_out_data);
         return wlen;
     }
 }
