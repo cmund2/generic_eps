@@ -17,9 +17,9 @@ namespace Nos3
         /* Accessors */
         /* Provide the hardware model a way to get the specific data out of the data point */
         std::string to_string(void) const;
-        double      get_generic_eps_data_x(void) const {return _generic_eps_data[0];}
-        double      get_generic_eps_data_y(void) const {return _generic_eps_data[1];}
-        double      get_generic_eps_data_z(void) const {return _generic_eps_data[2];}
+        double      get_sun_vector_x(void) const {return _sun_vector[0];}
+        double      get_sun_vector_y(void) const {return _sun_vector[1];}
+        double      get_sun_vector_z(void) const {return _sun_vector[2];}
         bool        is_generic_eps_data_valid(void) const {return _generic_eps_data_is_valid;}
     
     private:
@@ -31,7 +31,7 @@ namespace Nos3
         /* Specific data you need to get from the data provider to the hardware model */
         /* You only get to this data through the accessors above */
         mutable bool   _generic_eps_data_is_valid;
-        mutable double _generic_eps_data[3];
+        mutable double _sun_vector[3];
     };
 }
 

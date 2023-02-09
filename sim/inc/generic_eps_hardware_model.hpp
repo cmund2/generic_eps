@@ -89,6 +89,7 @@ namespace Nos3
                                                                 */
 
         std::uint8_t                                        _enabled;
+        std::uint8_t                                        _initialized_other_sims;
     };
 
     class I2CSlaveConnection : public NosEngine::I2C::I2CSlave

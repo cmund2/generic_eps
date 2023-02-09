@@ -6,7 +6,8 @@ namespace Nos3
 
     extern ItcLogger::Logger *sim_logger;
 
-    Generic_epsHardwareModel::Generic_epsHardwareModel(const boost::property_tree::ptree& config) : SimIHardwareModel(config), _enabled(GENERIC_EPS_SIM_SUCCESS)
+    Generic_epsHardwareModel::Generic_epsHardwareModel(const boost::property_tree::ptree& config) : SimIHardwareModel(config), 
+    _enabled(GENERIC_EPS_SIM_SUCCESS), _initialized_other_sims(GENERIC_EPS_SIM_ERROR)
     {
         /* Get the NOS engine connection string */
         std::string connection_string = config.get("common.nos-connection-string", "tcp://127.0.0.1:12001"); 
@@ -259,9 +260,24 @@ namespace Nos3
     /* Custom function to prepare the Generic_eps Data */
     void Generic_epsHardwareModel::create_generic_eps_data(std::vector<uint8_t>& out_data)
     {
-        /* Update data */
         boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
-
+        
+        /* Iniitalize if not yet done */
+        if(_initialized_other_sims == GENERIC_EPS_SIM_ERROR)
+        {    
+            std::uint8_t i, j;
+            for (i = 0; i < 8; i++)
+            {
+                j = std::uint8_t (_switch[i]._status & 0x00AA);
+                if(j == 0xAA)
+                {
+                    eps_switch_update(i, j);
+                }
+            }
+            _initialized_other_sims = GENERIC_EPS_SIM_SUCCESS;
+        }
+        
+        /* TODO: Update data based on provided SVB and switch statesince last cycle */
 
         /* Prepare data size */
         out_data.resize(65, 0x00);
