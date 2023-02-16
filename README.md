@@ -1,9 +1,9 @@
 # Generic EPS - NOS3 Component
-This repository contains the NOS3 Generic Electrical Power System Component.
+This repository contains the NOS3 Generic Electrical Power System (EPS) Component.
 This includes flight software (FSW), ground software (GSW), simulation, and support directories.
 
 ## Overview
-This generic eps component is an I2C device that accepts commands via writes to specific addresses in memory and returns status in every response.
+This generic EPS component is an I2C device that accepts commands to change switch state, request telemetry, and reset the spacecraft.
 The available FSW is for use in the core Flight System (cFS) while the GSW supports COSMOS.
 A NOS3 simulation is available which includes both generic_eps and 42 data providers.
 
@@ -39,7 +39,7 @@ Command Table
 
 ## Telemetry
 Telemetry reported is in big endian format (MSB x, LSB x+1) and is updated at a 1Hz frequency.
-* Battery
+* Battery Pack
   - uint16, voltage
   - uint16, temperature
 * EPS
@@ -72,54 +72,8 @@ The various configuration parameters available for each portion of the component
 Refer to the file [fsw/platform_inc/generic_eps_platform_cfg.h](fsw/platform_inc/generic_eps_platform_cfg.h) for the default configuration settings, as well as a summary on overriding parameters in mission-specific repositories.
 
 ## Simulation
-The default configuration returns data that mimics standard laboratory conditions after conversions:
-```
-<simulator>
-    <name>generic_eps_sim</name>
-    <active>true</active>
-    <library>libgeneric_eps_sim.so</library>
-    <hardware-model>
-        <type>GENERIC_EPS</type>
-        <connections>
-            <connection>
-                <type>command</type>
-                <bus-name>command</bus-name>
-                <node-name>generic_eps-sim-command-node</node-name>
-            </connection>
-            <connection>
-                <type>i2c</type>
-                <bus-name>i2c_1</bus-name>
-                <bus-address>0x2B</bus-address>
-                <node-port>10</node-port>
-            </connection>
-        </connections>
-        <data-provider>
-            <type>GENERIC_EPS_PROVIDER</type>
-        </data-provider>
-        <physical>
-            <bus>
-                <battery-voltage>24.0</battery-voltage>
-                <battery-temperature>30.0</battery-temperature>
-                <solar-array-voltage>32.0</solar-array-voltage>
-                <solar-array-temperature>80.0</solar-array-temperature>
-            </bus>
-            <switch-0>
-                <node-name>unknown-sim-command-node</node-name>
-                <voltage>3.3</voltage>
-                <current>0.25</current>
-                <hex-status>0000</hex-status>
-            </switch-0>
-            ...
-            <switch-7>
-                <node-name>unknown-sim-command-node</node-name>
-                <voltage>12.0</voltage>
-                <current>1.23</current>
-                <hex-status>00AA</hex-status>
-            </switch-7>
-        </physical>
-    </hardware-model>
-</simulator>
-```
+The default configuration returns data initialized by the values in the simulation configuration settings used in the NOS3 simulator configuration file.
+The EPS configuration options for this are captured in [./sim/cfg/nos3-eps-simulator.xml](./sim/cfg/nos3-eps-simulator.xml) for ease of use.
 
 ## 42
 Optionally the 42 data provider can be configured in the `nos3-simulator.xml`:
