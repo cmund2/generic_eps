@@ -15,7 +15,6 @@
 
 /*
 ** Ground Command Codes
-** TODO: Add additional commands required by the specific component
 */
 #define GENERIC_EPS_NOOP_CC                 0
 #define GENERIC_EPS_RESET_COUNTERS_CC       1
@@ -23,7 +22,6 @@
 
 /* 
 ** Telemetry Request Command Codes
-** TODO: Add additional commands required by the specific component
 */
 #define GENERIC_EPS_REQ_HK_TLM              0
 

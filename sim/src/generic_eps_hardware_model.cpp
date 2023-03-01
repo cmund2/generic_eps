@@ -40,8 +40,8 @@ namespace Nos3
         _i2c_slave_connection = new I2CSlaveConnection(this, bus_address, connection_string, bus_name);
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on I2C bus name %s as address 0x%02x.", bus_name.c_str(), bus_address);
 
-        /* Get on the command bus - EPS receives commands here */
-        _time_bus_name = "command";
+        /* Get on the command bus */
+        _command_bus_name = "command";
         if (config.get_child_optional("hardware-model.connections")) 
         {
             /* Loop through the connections for the hardware model connections */
@@ -51,19 +51,14 @@ namespace Nos3
                 /* v.second is the child tree */
                 if (v.second.get("type", "").compare("time") == 0) // 
                 {
-                    _time_bus_name = v.second.get("bus-name", "command");
+                    _command_bus_name = v.second.get("bus-name", "command");
                     /* Found it... don't need to go through any more items*/
                     break; 
                 }
             }
         }
-        _time_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, _time_bus_name));
-        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _time_bus_name.c_str());
-
-        /* Get on the sim bus - EPS sends commands here */
-        _sim_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, _time_bus_name));
-        _sim_node = _sim_bus->get_or_create_data_node("generic-eps-sim-commander");
-        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on bus named %s.", _time_bus_name.c_str());
+        _command_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, _command_bus_name));
+        sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _command_bus_name.c_str());
 
         /* Initialize status for battery and bus */
         std::string battv, battv_temp, solararray, solararray_temp;
@@ -212,11 +207,11 @@ namespace Nos3
                 /* Use the simulator bus to set the state in other simulators */
                 if (sw_status == 0x00)
                 {
-                    _sim_node->send_non_confirmed_message_async(_init_switch[sw_num]._node_name, 7, "DISABLE");
+                    _command_node->send_non_confirmed_message_async(_init_switch[sw_num]._node_name, 7, "DISABLE");
                 }
                 else
                 {
-                    _sim_node->send_non_confirmed_message_async(_init_switch[sw_num]._node_name, 6, "ENABLE");
+                    _command_node->send_non_confirmed_message_async(_init_switch[sw_num]._node_name, 6, "ENABLE");
                 }
                 
                 /* Set the values internally */
@@ -424,7 +419,7 @@ namespace Nos3
                     case 0xAA:
                         /* Reset */
                         sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Reset command received!");
-                        // TODO 
+                        /* TODO */
                         break;
                     
                     default:

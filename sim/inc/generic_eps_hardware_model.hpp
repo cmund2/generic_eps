@@ -17,7 +17,6 @@
 #include <generic_eps_data_point.hpp>
 #include <sim_i_hardware_model.hpp>
 
-#include <iostream>
 #include <string>
 
 
@@ -52,11 +51,8 @@ namespace Nos3
         /* Private data members */
         class I2CSlaveConnection*                           _i2c_slave_connection;
         
-        std::string                                         _time_bus_name;
-        std::unique_ptr<NosEngine::Client::Bus>             _time_bus; /* Standard */
-
-        std::unique_ptr<NosEngine::Client::Bus>             _sim_bus;
-        NosEngine::Client::DataNode*                        _sim_node;
+        std::string                                         _command_bus_name;
+        std::unique_ptr<NosEngine::Client::Bus>             _command_bus; /* Standard */
 
         SimIDataProvider*                                   _generic_eps_dp;
 

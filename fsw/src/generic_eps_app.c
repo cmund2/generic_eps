@@ -275,7 +275,6 @@ void GENERIC_EPS_ProcessCommandPacket(void)
 
 /*
 ** Process ground commands
-** TODO: Add additional commands required by the specific component
 */
 void GENERIC_EPS_ProcessGroundCommand(void)
 {
