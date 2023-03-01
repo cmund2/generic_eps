@@ -333,7 +333,7 @@ void GENERIC_EPS_ProcessGroundCommand(void)
                 if (status == OS_SUCCESS)
                 {
                     GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
-                    CFE_EVS_SendEvent(GENERIC_EPS_SWITCH_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Switch %d set to 0x%02x counters command received", ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->SwitchNumber, ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->State);
+                    CFE_EVS_SendEvent(GENERIC_EPS_SWITCH_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Switch %d set to 0x%02x", ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->SwitchNumber, ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->State);
                 }
                 else
                 {
