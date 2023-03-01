@@ -44,10 +44,8 @@
 #define CMD_UNKNOWN -1
 #define CMD_HELP     0
 #define CMD_EXIT     1
-#define CMD_NOOP     2
-#define CMD_HK       3
-#define CMD_GENERIC_EPS   4
-#define CMD_CFG      5
+#define CMD_HK       2
+#define CMD_SWITCH   3
 
 
 /*

@@ -15,13 +15,11 @@
 ** Default GENERIC_EPS Configuration
 */
 #ifndef GENERIC_EPS_CFG
-    /* Notes: 
-    **   NOS3 uart requires matching handle and bus number
-    */
-    #define GENERIC_EPS_CFG_STRING           "usart_29"
-    #define GENERIC_EPS_CFG_HANDLE           29 
-    #define GENERIC_EPS_CFG_BAUDRATE_HZ      115200
-    #define GENERIC_EPS_CFG_MS_TIMEOUT       50            /* Max 255 */
+    #define GENERIC_EPS_CFG
+    #define GENERIC_EPS_CFG_I2C_HANDLE       1
+    #define GENERIC_EPS_CFG_I2C_SPEED        1000
+    #define GENERIC_EPS_CFG_I2C_ADDRESS      0x2B // 7-bit address
+    #define GENERIC_EPS_CFG_I2C_TIMEOUT      10
     /* Note: Debug flag disabled (commented out) by default */
     //#define GENERIC_EPS_CFG_DEBUG
 #endif

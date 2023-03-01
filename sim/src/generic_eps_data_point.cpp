@@ -11,9 +11,9 @@ namespace Nos3
 
         /* Do calculations based on provided data */
         _generic_eps_data_is_valid = true;
-        _generic_eps_data[0] = count * 0.001;
-        _generic_eps_data[1] = count * 0.002;
-        _generic_eps_data[2] = count * 0.003;
+        _sun_vector[0] = count * 0.001;
+        _sun_vector[1] = count * 0.002;
+        _sun_vector[2] = count * 0.003;
     }
 
     Generic_epsDataPoint::Generic_epsDataPoint(int16_t spacecraft, const boost::shared_ptr<Sim42DataPoint> dp)
@@ -22,9 +22,9 @@ namespace Nos3
 
         /* Initialize data */
         _generic_eps_data_is_valid = false;
-        _generic_eps_data[0] = 0.0;
-        _generic_eps_data[1] = 0.0;
-        _generic_eps_data[2] = 0.0;
+        _sun_vector[0] = 0.0;
+        _sun_vector[1] = 0.0;
+        _sun_vector[2] = 0.0;
 
         /*
         ** Declare 42 telemetry string prefix
@@ -32,7 +32,7 @@ namespace Nos3
         ** 42 data stream defined in `42/Source/IPC/SimWriteToSocket.c`
         */
         std::ostringstream MatchString;
-        MatchString << "SC[" << spacecraft << "].svb = "; /* TODO: Change me to match the data from 42 you are interested in */
+        MatchString << "SC[" << spacecraft << "].svb = "; /* Sun-pointing unit vector, expressed in SC.B[0] [~=~] */
         size_t MSsize = MatchString.str().size();
 
         /* Parse 42 telemetry */
@@ -50,15 +50,15 @@ namespace Nos3
                     /* Custom work to extract the data from the 42 string and save it off in the member data of this data point */
                     std::string s;
                     iss >> s;
-                    _generic_eps_data[0] = std::stod(s);
+                    _sun_vector[0] = std::stod(s);
                     iss >> s;
-                    _generic_eps_data[1] = std::stod(s);
+                    _sun_vector[1] = std::stod(s);
                     iss >> s;
-                    _generic_eps_data[2] = std::stod(s);
+                    _sun_vector[2] = std::stod(s);
                     /* Mark data as valid */
                     _generic_eps_data_is_valid = true;
                     /* Debug print */
-                    sim_logger->trace("Generic_epsDataPoint::Generic_epsDataPoint:  Parsed svb = %f %f %f", _generic_eps_data[0], _generic_eps_data[1], _generic_eps_data[2]);
+                    sim_logger->trace("Generic_epsDataPoint::Generic_epsDataPoint:  Parsed svb = %f %f %f", _sun_vector[0], _sun_vector[1], _sun_vector[2]);
                 }
             }
         } 
@@ -81,11 +81,11 @@ namespace Nos3
         ss << (_generic_eps_data_is_valid ? "Valid" : "INVALID");
         ss << std::setprecision(std::numeric_limits<double>::digits10); /* Full double precision */
         ss << " Generic_eps Data: "
-           << _generic_eps_data[0]
+           << _sun_vector[0]
            << " "
-           << _generic_eps_data[1]
+           << _sun_vector[1]
            << " "
-           << _generic_eps_data[2];
+           << _sun_vector[2];
 
         return ss.str();
     }

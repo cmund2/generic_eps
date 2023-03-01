@@ -29,13 +29,6 @@
 
 
 /*
-** Enabled and Disabled Definitions
-*/
-#define GENERIC_EPS_DEVICE_DISABLED       0
-#define GENERIC_EPS_DEVICE_ENABLED        1
-
-
-/*
 ** GENERIC_EPS global data structure
 ** The cFE convention is to put all global app data in a single struct. 
 ** This struct is defined in the `generic_eps_app.h` file with one global instance 
@@ -56,17 +49,10 @@ typedef struct
     CFE_SB_PipeId_t CmdPipe;            /* Pipe Id for HK command pipe */
     uint32 RunStatus;                   /* App run status for controlling the application state */
 
-    /*
-	** Device data 
-	*/
-	uint32 DeviceID;		            /* Device ID provided by CFS on initialization */
-    GENERIC_EPS_Device_tlm_t DevicePkt;      /* Device specific data packet */
-
     /* 
     ** Device protocol
-    ** TODO: Make specific to your application
     */ 
-    uart_info_t Generic_epsUart;             /* Hardware protocol definition */
+    i2c_bus_info_t Generic_epsI2C;      /* Hardware protocol definition */
 
 } GENERIC_EPS_AppData_t;
 
@@ -91,10 +77,7 @@ void  GENERIC_EPS_ProcessCommandPacket(void);
 void  GENERIC_EPS_ProcessGroundCommand(void);
 void  GENERIC_EPS_ProcessTelemetryRequest(void);
 void  GENERIC_EPS_ReportHousekeeping(void);
-void  GENERIC_EPS_ReportDeviceTelemetry(void);
 void  GENERIC_EPS_ResetCounters(void);
-void  GENERIC_EPS_Enable(void);
-void  GENERIC_EPS_Disable(void);
 int32 GENERIC_EPS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 expected_length);
 
 #endif /* _GENERIC_EPS_APP_H_ */

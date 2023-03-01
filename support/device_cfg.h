@@ -5,11 +5,10 @@
 ** GENERIC_EPS Checkout Configuration
 */
 #define GENERIC_EPS_CFG
-/* Note: NOS3 uart requires matching handle and bus number */
-#define GENERIC_EPS_CFG_STRING           "/dev/usart_29"
-#define GENERIC_EPS_CFG_HANDLE           29 
-#define GENERIC_EPS_CFG_BAUDRATE_HZ      115200
-#define GENERIC_EPS_CFG_MS_TIMEOUT       250
+#define GENERIC_EPS_CFG_I2C_HANDLE       1
+#define GENERIC_EPS_CFG_I2C_SPEED        1000
+#define GENERIC_EPS_CFG_I2C_ADDRESS      0x2B // 7-bit address
+#define GENERIC_EPS_CFG_I2C_TIMEOUT      10
 #define GENERIC_EPS_CFG_DEBUG
 
 #endif /* _GENERIC_EPS_CHECKOUT_DEVICE_CFG_H_ */

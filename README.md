@@ -1,91 +1,79 @@
-# Generic_eps - NOS3 Component
-This repository contains the NOS3 Generic_eps Component.
+# Generic EPS - NOS3 Component
+This repository contains the NOS3 Generic Electrical Power System (EPS) Component.
 This includes flight software (FSW), ground software (GSW), simulation, and support directories.
 
 ## Overview
-This generic_eps component is a UART device that accepts multiple commands, including requests for telemetry and data.
+This generic EPS component is an I2C device that accepts commands to change switch state, request telemetry, and reset the spacecraft.
 The available FSW is for use in the core Flight System (cFS) while the GSW supports COSMOS.
 A NOS3 simulation is available which includes both generic_eps and 42 data providers.
 
 
 # Device Communications
 The protocol, commands, and responses of the component are captured below.
+The EPS has 8 switches to turn components on and off.
+Information for voltage, current, and status of each are provided. 
+Additionally battery voltage, battery temperature and solar array voltage, solar array temperature.
 
 ## Protocol
-The protocol in use is UART 115200 8N1.
-The device is speak when spoken too.
-All communications with the device require / contain a header of 0xDEAD and a trailer of 0xBEEF.
+The protocol in use is I2C at 1MHz with 7-bit address 0x2B. 
 
-## Commands
-All commands received by the device are echoed back to the sender to confirm receipt.
-Should commmands involve a reply, the device immediately sends the reply after the command echo.
-Device commands are all formatted in the same manner and are fixed in size:
-* uint16, 0xDEAD
-* uint8, command identifier
-  - (0) Get Housekeeping
-  - (1) Get Generic_eps
-  - (2) Set Configuration
-* uint32, command payload
-  - Unused for all but set configuration command
-* uint16, 0xBEEF
+## Command Address
+Device commands are all formatted in the same manner and are fixed in size.
+Commands are confirmed only by verifying the expected switch state change in telemetry.
+* uint8, Slave Address [7:1] and Read/Write [0]
+* uint8, Command
+* uint8, Data
+* uint8, CRC
+  - CRC8 of command and data
 
-## Response
-Response formats are as follows:
-* Housekeeping
-  - uint16, 0xDEAD
-  - uint32, Command Counter
-    * Increments for each command received
-  - uint32, Configuration
-    * Internal configuration number in use by the device
-  - uint32, Status
-    * Self reported status of the component where zero is completely healthy and each bit represents different errors
-    * No means to clear / set status except for a power cycle to the device
-  - uint16, 0xBEEF
-* Generic_eps
-  - uint16, 0xDEAD
-  - uint32, Command Counter
-    * Increments for each command received
-  - uint16, Data X
-    * X component of generic_eps data
-  - uint16, Data Y
-    * X component of generic_eps data
-  - uint16, Data Z
-    * X component of generic_eps data
-  - uint16, 0xBEEF
+Command Table
+* 0x00, Switch 0 State
+  - Data of 0x00 for OFF, 0xAA for ON for all switches
+* 0x01, Switch 1 State
+* ...
+* 0x07, Switch 7 State
+* 0x70, Telemetry Request
+  - Data field unused
+* 0xAA, Reset
+  - Data of 0xAA to trigger power cycle
+
+## Telemetry
+Telemetry reported is in big endian format (MSB x, LSB x+1) and is updated at a 1Hz frequency.
+* Battery Pack
+  - uint16, voltage
+  - uint16, temperature
+* EPS
+  - uint16, 3.3 voltage
+  - uint16, 5.0 voltage
+  - uint16, 12.0 voltage
+  - uint16, temperature
+* Solar Array
+  - uint16, voltage
+  - uint16, temperature 
+* Switch [0-7]
+  - uint16, voltage
+  - uint16, current
+  - uint16, status
+    * Bits [15:8] - Error flags, 0x00 is healthy
+    * Bits [7:0]  - 0x00 is off, 0xAA is on
+* uint8, CRC
+  - CRC8 of the previous data
+
+Conversion table
+* Voltages = (uint16 value * 0.001V)
+* Currents = (uint16 value * 0.001A)
+* Temperatures = (uint16 value * 0.01C) - 60C
 
 
 # Configuration
 The various configuration parameters available for each portion of the component are captured below.
 
 ## FSW
-Refer to the file [fsw/platform_inc/generic_eps_platform_cfg.h](fsw/platform_inc/generic_eps_platform_cfg.h) for the default
-configuration settings, as well as a summary on overriding parameters in mission-specific repositories.
+Refer to the file [fsw/platform_inc/generic_eps_platform_cfg.h](fsw/platform_inc/generic_eps_platform_cfg.h) for the default configuration settings, as well as a summary on overriding parameters in mission-specific repositories.
 
 ## Simulation
-The default configuration returns data that is X * 0.001, Y * 0.002, and Z * 0.003 the request count after conversions:
-```
-<simulator>
-    <name>generic_eps_sim</name>
-    <active>true</active>
-    <library>libgeneric_eps_sim.so</library>
-    <hardware-model>
-        <type>GENERIC_EPS</type>
-        <connections>
-            <connection><type>command</type>
-                <bus-name>command</bus-name>
-                <node-name>generic_eps-sim-command-node</node-name>
-            </connection>
-            <connection><type>usart</type>
-                <bus-name>usart_29</bus-name>
-                <node-port>29</node-port>
-            </connection>
-        </connections>
-        <data-provider>
-            <type>GENERIC_EPS_PROVIDER</type>
-        </data-provider>
-    </hardware-model>
-</simulator>
-```
+The default configuration returns data initialized by the values in the simulation configuration settings used in the NOS3 simulator configuration file.
+The EPS configuration options for this are captured in [./sim/cfg/nos3-eps-simulator.xml](./sim/cfg/nos3-eps-simulator.xml) for ease of use.
 
 ## 42
 Optionally the 42 data provider can be configured in the `nos3-simulator.xml`:

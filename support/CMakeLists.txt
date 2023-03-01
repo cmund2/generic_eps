@@ -17,13 +17,13 @@ set(TGTNAME cpu2)
 include(../../ComponentSettings.cmake)
 
 include_directories("./")
-include_directories("../fsw/mission_inc")
+include_directories("../fsw/platform_inc")
 include_directories("../fsw/src")
 include_directories("../../../fsw/apps/hwlib/fsw/public_inc")
 
 add_executable(generic_eps_checkout 
                generic_eps_checkout.c 
                ../fsw/src/generic_eps_device.c
-               ../../../fsw/apps/hwlib/fsw/linux/libuart.c
+               ../../../fsw/apps/hwlib/fsw/linux/libi2c.c
               )
 target_link_libraries(generic_eps_checkout)
