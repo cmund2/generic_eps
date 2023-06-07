@@ -20,7 +20,7 @@ namespace Nos3
     private:
         /* Disallow these */
         ~Generic_epsDataProvider(void) {};
-        Generic_epsDataProvider& operator=(const Generic_epsDataProvider&) {};
+        Generic_epsDataProvider& operator=(const Generic_epsDataProvider&) {return *this;};
 
         mutable double _request_count;
     };
