@@ -17,27 +17,6 @@
 */
 GENERIC_EPS_AppData_t GENERIC_EPS_AppData;
 
-static CFE_EVS_BinFilter_t  GENERIC_EPS_EventFilters[] =
-{   /* Event ID    mask */
-    {GENERIC_EPS_RESERVED_EID,           0x0000},
-    {GENERIC_EPS_STARTUP_INF_EID,        0x0000},
-    {GENERIC_EPS_LEN_ERR_EID,            0x0000},
-    {GENERIC_EPS_PIPE_ERR_EID,           0x0000},
-    {GENERIC_EPS_SUB_CMD_ERR_EID,        0x0000},
-    {GENERIC_EPS_SUB_REQ_HK_ERR_EID,     0x0000},
-    {GENERIC_EPS_PROCESS_CMD_ERR_EID,    0x0000},
-    {GENERIC_EPS_CMD_ERR_EID,            0x0000},
-    {GENERIC_EPS_CMD_NOOP_INF_EID,       0x0000},
-    {GENERIC_EPS_CMD_RESET_INF_EID,      0x0000},
-    {GENERIC_EPS_CMD_SWITCH_INF_EID,     0x0000},
-    {GENERIC_EPS_SWITCH_INF_EID,         0x0000},
-    {GENERIC_EPS_SWITCH_ERR_EID,         0x0000},
-    {GENERIC_EPS_DEVICE_TLM_ERR_EID,     0x0000},
-    {GENERIC_EPS_REQ_HK_ERR_EID,         0x0000},
-    {GENERIC_EPS_I2C_INIT_ERR_EID,       0x0000},
-};
-
-
 /*
 ** Application entry point and main process loop
 */
@@ -127,9 +106,7 @@ int32 GENERIC_EPS_AppInit(void)
     /*
     ** Register the events
     */ 
-    status = CFE_EVS_Register(GENERIC_EPS_EventFilters,
-                              sizeof(GENERIC_EPS_EventFilters)/sizeof(CFE_EVS_BinFilter_t),
-                              CFE_EVS_BINARY_FILTER);    /* as default, no filters are used */
+    status = CFE_EVS_Register(NULL, 0, CFE_EVS_BINARY_FILTER);    /* as default, no filters are used */
     if (status != CFE_SUCCESS)
     {
         CFE_ES_WriteToSysLog("GENERIC_EPS: Error registering for event services: 0x%08X\n", (unsigned int) status);
