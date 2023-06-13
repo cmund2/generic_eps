@@ -29,8 +29,3 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:$ORIGIN/../lib") # Pick up .so i
 add_library(generic_eps_sim SHARED ${generic_eps_sim_src} ${generic_eps_sim_inc})
 target_link_libraries(generic_eps_sim ${generic_eps_sim_libs})
 install(TARGETS generic_eps_sim LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-
-add_executable(nos3-generic-eps-simulator src/generic_eps_sim.cpp)
-target_link_libraries(nos3-generic-eps-simulator generic_eps_sim ${generic_eps_sim_libs})
-install(TARGETS nos3-generic-eps-simulator RUNTIME DESTINATION bin)
-install(TARGETS generic_eps_sim LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
