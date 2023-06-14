@@ -326,7 +326,7 @@ void GENERIC_EPS_ProcessGroundCommand(void)
             if (GENERIC_EPS_VerifyCmdLength(GENERIC_EPS_AppData.MsgPtr, sizeof(GENERIC_EPS_Switch_cmd_t)) == OS_SUCCESS)
             {
                 CFE_EVS_SendEvent(GENERIC_EPS_CMD_SWITCH_INF_EID, CFE_EVS_INFORMATION, "GENERIC_EPS: Switch command received");
-                status = GENERIC_EPS_CommandSwitch(GENERIC_EPS_AppData.Generic_epsI2C.handle,
+                status = GENERIC_EPS_CommandSwitch(&GENERIC_EPS_AppData.Generic_epsI2C,
                                                  ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->SwitchNumber,
                                                  ((GENERIC_EPS_Switch_cmd_t*) GENERIC_EPS_AppData.MsgPtr)->State,
                                                    &GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK);
@@ -396,7 +396,7 @@ void GENERIC_EPS_ReportHousekeeping(void)
 {
     int32 status = OS_SUCCESS;
 
-    status = GENERIC_EPS_RequestHK(GENERIC_EPS_AppData.Generic_epsI2C.handle, &GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK);
+    status = GENERIC_EPS_RequestHK(&GENERIC_EPS_AppData.Generic_epsI2C, &GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK);
     if (status == OS_SUCCESS)
     {
         GENERIC_EPS_AppData.HkTelemetryPkt.DeviceCount++;
