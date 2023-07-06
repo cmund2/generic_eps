@@ -44,7 +44,7 @@ uint8_t GENERIC_EPS_CRC8(uint8_t* payload, uint32_t length)
 ** Generic command to device
 ** Note that confirming the echoed response is specific to this implementation
 */
-int32_t GENERIC_EPS_CommandDevice(int32_t handle, uint8_t cmd, uint8_t value)
+int32_t GENERIC_EPS_CommandDevice(i2c_bus_info_t* device, uint8_t cmd, uint8_t value)
 {
     int32_t status = OS_SUCCESS;
     uint8_t write_data[3] = {0};
@@ -59,7 +59,7 @@ int32_t GENERIC_EPS_CommandDevice(int32_t handle, uint8_t cmd, uint8_t value)
         write_data[2] = GENERIC_EPS_CRC8(write_data, 2);
 
         /* Initiate transaction */
-        i2c_master_transaction(handle, GENERIC_EPS_CFG_I2C_ADDRESS,
+        i2c_master_transaction(device, GENERIC_EPS_CFG_I2C_ADDRESS,
                                write_data, 3, 
                                NULL, 0, 
                                GENERIC_EPS_CFG_I2C_TIMEOUT);
@@ -78,7 +78,7 @@ int32_t GENERIC_EPS_CommandDevice(int32_t handle, uint8_t cmd, uint8_t value)
 /*
 ** Request housekeeping command
 */
-int32_t GENERIC_EPS_RequestHK(int32_t handle, GENERIC_EPS_Device_HK_tlm_t* data)
+int32_t GENERIC_EPS_RequestHK(i2c_bus_info_t* device, GENERIC_EPS_Device_HK_tlm_t* data)
 {
     int32_t status = OS_SUCCESS;
     uint8_t write_data[3] = {0};
@@ -92,7 +92,7 @@ int32_t GENERIC_EPS_RequestHK(int32_t handle, GENERIC_EPS_Device_HK_tlm_t* data)
     write_data[2] = GENERIC_EPS_CRC8(write_data,2);
 
     /* Initiate transaction */
-    i2c_master_transaction(handle, GENERIC_EPS_CFG_I2C_ADDRESS,
+    i2c_master_transaction(device, GENERIC_EPS_CFG_I2C_ADDRESS,
                            write_data, 3, 
                            read_data, GENERIC_EPS_DEVICE_HK_LEN+1, 
                            GENERIC_EPS_CFG_I2C_TIMEOUT);
@@ -148,7 +148,7 @@ int32_t GENERIC_EPS_RequestHK(int32_t handle, GENERIC_EPS_Device_HK_tlm_t* data)
 /*
 ** Command EPS Switch
 */
-int32_t GENERIC_EPS_CommandSwitch(int32_t handle, uint8_t switch_num, uint8_t value, GENERIC_EPS_Device_HK_tlm_t* data)
+int32_t GENERIC_EPS_CommandSwitch(i2c_bus_info_t* device, uint8_t switch_num, uint8_t value, GENERIC_EPS_Device_HK_tlm_t* data)
 {
     int32_t status = OS_SUCCESS;
 
@@ -159,11 +159,11 @@ int32_t GENERIC_EPS_CommandSwitch(int32_t handle, uint8_t switch_num, uint8_t va
         if ((value == 0x00) || (value == 0xAA))
         {
             /* Command switch state */
-            status = GENERIC_EPS_CommandDevice(handle, switch_num, value);
+            status = GENERIC_EPS_CommandDevice(device, switch_num, value);
             if (status == OS_SUCCESS)
             {
                 /* Get HK */
-                status = GENERIC_EPS_RequestHK(handle, data);
+                status = GENERIC_EPS_RequestHK(device, data);
                 
                 /* Confirm switch state changed in HK */
                 if (status == OS_SUCCESS)

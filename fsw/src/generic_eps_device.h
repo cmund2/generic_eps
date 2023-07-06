@@ -50,8 +50,8 @@ typedef struct
 ** Prototypes
 */
 uint8_t GENERIC_EPS_CRC8(uint8_t* payload, uint32_t length);
-int32_t GENERIC_EPS_CommandDevice(int32_t handle, uint8_t reg, uint8_t value);
-int32_t GENERIC_EPS_RequestHK(int32_t handle, GENERIC_EPS_Device_HK_tlm_t* data);
-int32_t GENERIC_EPS_CommandSwitch(int32_t handle, uint8_t switch_num, uint8_t value, GENERIC_EPS_Device_HK_tlm_t* data);
+int32_t GENERIC_EPS_CommandDevice(i2c_bus_info_t* device, uint8_t reg, uint8_t value);
+int32_t GENERIC_EPS_RequestHK(i2c_bus_info_t* device, GENERIC_EPS_Device_HK_tlm_t* data);
+int32_t GENERIC_EPS_CommandSwitch(i2c_bus_info_t* device, uint8_t switch_num, uint8_t value, GENERIC_EPS_Device_HK_tlm_t* data);
 
 #endif /* _GENERIC_EPS_DEVICE_H_ */
