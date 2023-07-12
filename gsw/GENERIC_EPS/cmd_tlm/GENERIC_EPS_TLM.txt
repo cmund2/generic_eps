@@ -4,6 +4,7 @@ TELEMETRY GENERIC_EPS GENERIC_EPS_HK_TLM LITTLE_ENDIAN "GENERIC_EPS_Hk_tlm_t"
   APPEND_ITEM    CCSDS_LENGTH         16 UINT         "CCSDS Packet Data Length" BIG_ENDIAN
   APPEND_ITEM    CCSDS_SECONDS        32 UINT         "CCSDS Telemetry Secondary Header (seconds)"
   APPEND_ITEM    CCSDS_SUBSECS        16 UINT         "CCSDS Telemetry Secondary Header (subseconds)"
+  APPEND_ITEM    CCSDS_SPARE          32 UINT         ""
   APPEND_ITEM    CMD_ERR_COUNT         8 UINT         "Command Error Count"
   APPEND_ITEM    CMD_COUNT             8 UINT         "Command Count"
   APPEND_ITEM    DEVICE_ERR_COUNT      8 UINT         "Device Command Error Count"
