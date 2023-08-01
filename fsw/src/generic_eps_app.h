@@ -45,7 +45,7 @@ typedef struct
     /*
     ** Operational data  - not reported in housekeeping
     */
-    CFE_SB_MsgPtr_t MsgPtr;             /* Pointer to msg received on software bus */
+    CFE_MSG_Message_t * MsgPtr;             /* Pointer to msg received on software bus */
     CFE_SB_PipeId_t CmdPipe;            /* Pipe Id for HK command pipe */
     uint32 RunStatus;                   /* App run status for controlling the application state */
 
@@ -68,16 +68,16 @@ extern GENERIC_EPS_AppData_t GENERIC_EPS_AppData; /* GENERIC_EPS App Data */
 **
 ** Local function prototypes.
 **
-** Note: Except for the entry point (GENERIC_EPS_AppMain), these
+** Note: Except for the entry point (EPS_AppMain), these
 **       functions are not called from any other source module.
 */
-void  GENERIC_EPS_AppMain(void);
+void  EPS_AppMain(void);
 int32 GENERIC_EPS_AppInit(void);
 void  GENERIC_EPS_ProcessCommandPacket(void);
 void  GENERIC_EPS_ProcessGroundCommand(void);
 void  GENERIC_EPS_ProcessTelemetryRequest(void);
 void  GENERIC_EPS_ReportHousekeeping(void);
 void  GENERIC_EPS_ResetCounters(void);
-int32 GENERIC_EPS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 expected_length);
+int32 GENERIC_EPS_VerifyCmdLength(CFE_MSG_Message_t * msg, uint16 expected_length);
 
 #endif /* _GENERIC_EPS_APP_H_ */
