@@ -24,7 +24,7 @@ typedef struct
     uint16_t Current;
     uint16_t Status;
 
-} OS_PACK GENERIC_EPS_Switch_tlm_t;
+} __attribute__((packed)) GENERIC_EPS_Switch_tlm_t;
 
 
 /*
@@ -42,7 +42,7 @@ typedef struct
     uint16_t  SolarArrayTemperature;
     GENERIC_EPS_Switch_tlm_t  Switch[8];
 
-} OS_PACK GENERIC_EPS_Device_HK_tlm_t;
+} __attribute__((packed)) GENERIC_EPS_Device_HK_tlm_t;
 #define GENERIC_EPS_DEVICE_HK_LEN sizeof ( GENERIC_EPS_Device_HK_tlm_t )
 
 
