@@ -16,9 +16,8 @@
 /*
 ** Global Variables
 */
-uart_info_t Generic_epsUart;
+i2c_bus_info_t Generic_epsI2C;
 GENERIC_EPS_Device_HK_tlm_t Generic_epsHK;
-GENERIC_EPS_Device_Data_tlm_t Generic_epsData;
 
 /*
 ** Component Functions
@@ -29,14 +28,10 @@ void print_help(void)
         "---------------------------------------------------------------------\n"
         "help                               - Display help                    \n"
         "exit                               - Exit app                        \n"
-        "noop                               - No operation command to device  \n"
-        "  n                                - ^                               \n"
         "hk                                 - Request device housekeeping     \n"
         "  h                                - ^                               \n"
-        "generic_eps                             - Request generic_eps data             \n"
-        "  s                                - ^                               \n"
-        "cfg #                              - Send configuration #            \n"
-        "  c #                              - ^                               \n"
+        "switch # #                         - Switch [0-7] [0x00 off, 0xAA on]\n"
+        "  s # #                            - ^                               \n"
         "\n"
     );
 }
@@ -59,14 +54,6 @@ int get_command(const char* str)
     {
         status = CMD_EXIT;
     }
-    else if(strcmp(lcmd, "noop") == 0) 
-    {
-        status = CMD_NOOP;
-    }
-    else if(strcmp(lcmd, "n") == 0) 
-    {
-        status = CMD_NOOP;
-    }
     else if(strcmp(lcmd, "hk") == 0) 
     {
         status = CMD_HK;
@@ -75,21 +62,13 @@ int get_command(const char* str)
     {
         status = CMD_HK;
     }
-    else if(strcmp(lcmd, "generic_eps") == 0) 
+    else if(strcmp(lcmd, "switch") == 0) 
     {
-        status = CMD_GENERIC_EPS;
+        status = CMD_SWITCH;
     }
     else if(strcmp(lcmd, "s") == 0) 
     {
-        status = CMD_GENERIC_EPS;
-    }
-    else if(strcmp(lcmd, "cfg") == 0) 
-    {
-        status = CMD_CFG;
-    }
-    else if(strcmp(lcmd, "c") == 0) 
-    {
-        status = CMD_CFG;
+        status = CMD_SWITCH;
     }
     return status;
 }
@@ -99,7 +78,8 @@ int process_command(int cc, int num_tokens, char* tokens)
 {
     int32_t status = OS_SUCCESS;
     int32_t exit_status = OS_SUCCESS;
-    int config;
+    uint8_t switch_num = 0;
+    uint8_t value = 0;
 
     /* Process command */
     switch(cc) 
@@ -112,25 +92,10 @@ int process_command(int cc, int num_tokens, char* tokens)
             exit_status = OS_ERROR;
             break;
 
-        case CMD_NOOP:
-            if (check_number_arguments(num_tokens, 1) == OS_SUCCESS)
-            {
-                status = GENERIC_EPS_CommandDevice(Generic_epsUart.handle, GENERIC_EPS_DEVICE_NOOP_CMD, 0);
-                if (status == OS_SUCCESS)
-                {
-                    OS_printf("NOOP command success\n");
-                }
-                else
-                {
-                    OS_printf("NOOP command failed!\n");
-                }
-            }
-            break;
-
         case CMD_HK:
             if (check_number_arguments(num_tokens, 1) == OS_SUCCESS)
             {
-                status = GENERIC_EPS_RequestHK(Generic_epsUart.handle, &Generic_epsHK);
+                status = GENERIC_EPS_RequestHK(Generic_epsI2C.handle, &Generic_epsHK);
                 if (status == OS_SUCCESS)
                 {
                     OS_printf("GENERIC_EPS_RequestHK command success\n");
@@ -142,34 +107,39 @@ int process_command(int cc, int num_tokens, char* tokens)
             }
             break;
 
-        case CMD_GENERIC_EPS:
-            if (check_number_arguments(num_tokens, 1) == OS_SUCCESS)
+        case CMD_SWITCH:
+            if (check_number_arguments(num_tokens, 3) == OS_SUCCESS)
             {
-                status = GENERIC_EPS_RequestData(Generic_epsUart.handle, &Generic_epsData);
-                if (status == OS_SUCCESS)
+                switch_num = atoi(&tokens[0]);
+                value = atoi(&tokens[1]);
+                /* Check switch number valid */
+                if (switch_num < 8)
                 {
-                    OS_printf("GENERIC_EPS_RequestHK command success\n");
+                    /* Check value valid */
+                    if ((value == 0x00) || (value == 0xAA))
+                    {
+                        status = GENERIC_EPS_CommandSwitch(Generic_epsI2C.handle, switch_num, value, &Generic_epsHK);
+                        if (status == OS_SUCCESS)
+                        {
+                            OS_printf("GENERIC_EPS_CommandSwitch command success\n");
+                        }
+                        else
+                        {
+                            OS_printf("GENERIC_EPS_CommandSwitch command failed!\n");
+                        }
+                    }
+                    else
+                    {
+                        OS_printf("GENERIC_EPS_CommandSwitch value invalid!\n");
+                    }
                 }
                 else
                 {
-                    OS_printf("GENERIC_EPS_RequestHK command failed!\n");
+                    OS_printf("GENERIC_EPS_CommandSwitch switch number invalid!\n");
                 }
-            }
-            break;
 
-        case CMD_CFG:
-            if (check_number_arguments(num_tokens, 1) == OS_SUCCESS)
-            {
-                config = atoi(&tokens[0]);
-                status = GENERIC_EPS_CommandDevice(Generic_epsUart.handle, GENERIC_EPS_DEVICE_CFG_CMD, config);
-                if (status == OS_SUCCESS)
-                {
-                    OS_printf("Configuration command success with value %d\n", config);
-                }
-                else
-                {
-                    OS_printf("Configuration command failed!\n");
-                }
+
+                
             }
             break;
         
@@ -192,18 +162,18 @@ int main(int argc, char *argv[])
     uint8_t run_status = OS_SUCCESS;
 
     /* Open device specific protocols */
-    Generic_epsUart.deviceString = GENERIC_EPS_CFG_STRING;
-    Generic_epsUart.handle = GENERIC_EPS_CFG_HANDLE;
-    Generic_epsUart.isOpen = PORT_CLOSED;
-    Generic_epsUart.baud = GENERIC_EPS_CFG_BAUDRATE_HZ;
-    status = uart_init_port(&Generic_epsUart);
+    Generic_epsI2C.handle = GENERIC_EPS_CFG_I2C_HANDLE;
+    Generic_epsI2C.addr = GENERIC_EPS_CFG_I2C_ADDRESS;
+    Generic_epsI2C.isOpen = I2C_CLOSED;
+    Generic_epsI2C.speed = GENERIC_EPS_CFG_I2C_SPEED;
+    status = i2c_master_init(&Generic_epsI2C);
     if (status == OS_SUCCESS)
     {
-        printf("UART device %s configured with baudrate %d \n", Generic_epsUart.deviceString, Generic_epsUart.baud);
+        printf("I2C device 0x%02x configured with speed %d \n", Generic_epsI2C.addr, Generic_epsI2C.speed);
     }
     else
     {
-        printf("UART device %s failed to initialize! \n", Generic_epsUart.deviceString);
+        printf("I2C device 0x%02x failed to initialize! \n", Generic_epsI2C.addr);
         run_status = OS_ERROR;
     }
 
@@ -242,9 +212,6 @@ int main(int argc, char *argv[])
             run_status = process_command(cmd, num_input_tokens, token_ptr);
         }
     }
-
-    // Close the device 
-    uart_close_port(Generic_epsUart.handle);
 
     OS_printf("Cleanly exiting generic_eps application...\n\n"); 
     return 1;

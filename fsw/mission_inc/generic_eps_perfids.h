@@ -16,7 +16,6 @@
 ** id conflict with other apps.  Performance IDs are used for cFE performance
 ** metrics.
 */
-#define GENERIC_EPS_PERF_ID          500
-#define GENERIC_EPS_DEVICE_PERF_ID   501
+#define GENERIC_EPS_PERF_ID          501
 
 #endif /* _GENERIC_EPS_PERFIDS_H_ */
