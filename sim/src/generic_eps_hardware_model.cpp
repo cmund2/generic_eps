@@ -61,19 +61,25 @@ namespace Nos3
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _command_bus_name.c_str());
 
         /* Initialize status for battery and bus */
-        std::string battv, battv_temp, solararray, solararray_temp;
+        std::string battv, battv_temp, solararray, solararray_temp, batt_amp_hrs, always_on_v, always_on_a;
         battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
+        batt_amp_hrs = config.get("simulator.hardware-model.physical.bus.battery-amp-hours", "5.0");
         solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
         solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
+        always_on_v = config.get("simulator.hardware-model.physical.always-on.main-bus-voltage", "24.0");
+        always_on_a = config.get("simulator.hardware-model.physical.always-on.main-bus-amperage", "5.0");
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
+        _bus[0]._battery_amphrs = atoi(batt_amp_hrs.c_str())*1000;
         _bus[1]._voltage = 3.3 * 1000;
         _bus[2]._voltage = 5.0 * 1000;
         _bus[3]._voltage = 12.0 * 1000;
         _bus[4]._voltage = atoi(solararray.c_str()) * 1000;
         _bus[4]._temperature = (atoi(solararray_temp.c_str()) + 60) * 100;
+        _bus[5]._voltage = atoi(always_on_v.c_str()) * 1000;
+        _bus[5]._current = atoi(always_on_a.c_str()) * 1000;
 
         /*
         sim_logger->info("  Initial _bus[0]._voltage = 0x%04x", _bus[0]._voltage);

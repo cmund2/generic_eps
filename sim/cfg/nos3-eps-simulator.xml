@@ -24,9 +24,16 @@
                     <bus>
                         <battery-voltage>24.0</battery-voltage>
                         <battery-temperature>30.0</battery-temperature>
+                        <battery-amp-hours>5.00</battery-amp-hours>
                         <solar-array-voltage>32.0</solar-array-voltage>
                         <solar-array-temperature>80.0</solar-array-temperature>
+                        <solar-array-max-amperage>5.00</solar-array-max-amperage>
                     </bus>
+                    <always-on>
+                        <main-bus-voltage>24.0</main-bus-voltage>
+                        <main-bus-temperature>30.0</main-bus-temperature>
+                        <main-bus-amperage>5.00</main-bus-amperage>
+                    </always-on>
                     <switch-0>
                         <node-name>sample-sim-command-node</node-name>
                         <voltage>1.23</voltage>
