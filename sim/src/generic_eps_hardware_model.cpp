@@ -13,6 +13,21 @@ namespace Nos3
         std::string connection_string = config.get("common.nos-connection-string", "tcp://127.0.0.1:12001"); 
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  NOS Engine connection string: %s.", connection_string.c_str());
 
+        // Set up the time node which is **required** for this model
+        std::string time_bus_name = "command";
+        if (config.get_child_optional("hardware-model.connections")) {
+            BOOST_FOREACH(const boost::property_tree::ptree::value_type &v, config.get_child("hardware-model.connections")) {
+                // v.first is the name of the child.
+                // v.second is the child tree.
+                if (v.second.get("type", "").compare("time") == 0) {
+                    time_bus_name = v.second.get("bus-name", "command");
+                    break;
+                }
+            }
+        }
+        _time_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
+        sim_logger->debug("EPSSimHardwareModel::EPSSimHardwareModel:  Time bus %s now active.", time_bus_name.c_str());
+
         /* Get a data provider */
         std::string dp_name = config.get("simulator.hardware-model.data-provider.type", "GENERIC_EPS_PROVIDER");
         _generic_eps_dp = SimDataProviderFactory::Instance().Create(dp_name, config);

@@ -47,6 +47,7 @@ namespace Nos3
         void eps_switch_update(const std::uint8_t sw_num, uint8_t sw_status);
         std::uint8_t generic_eps_crc8(const std::vector<uint8_t>& crc_data, std::uint32_t crc_size);
         void create_generic_eps_data(std::vector<uint8_t>& out_data); 
+        void update_battery_values(void);
 
         /* Private data members */
         class I2CSlaveConnection*                           _i2c_slave_connection;
@@ -55,6 +56,9 @@ namespace Nos3
         std::unique_ptr<NosEngine::Client::Bus>             _command_bus; /* Standard */
 
         SimIDataProvider*                                   _generic_eps_dp;
+
+        /* Time Bus */
+        std::unique_ptr<NosEngine::Client::Bus>             _time_bus;
 
         /* Internal switch data */
         struct Init_Switch_State
