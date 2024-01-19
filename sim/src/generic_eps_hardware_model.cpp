@@ -26,7 +26,7 @@ namespace Nos3
             }
         }
         _time_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
-        sim_logger->debug("EPSSimHardwareModel::EPSSimHardwareModel:  Time bus %s now active.", time_bus_name.c_str());
+        sim_logger->debug("Generic_epsHardwareModel::Generic_epsHardwareModel:  Time bus %s now active.", time_bus_name.c_str());
 
         /* Get a data provider */
         std::string dp_name = config.get("simulator.hardware-model.data-provider.type", "GENERIC_EPS_PROVIDER");
@@ -52,6 +52,8 @@ namespace Nos3
                 }
             }
         }
+        _time_bus->add_time_tick_callback(std::bind(&Generic_epsHardwareModel::update_battery_values, this));
+
         _i2c_slave_connection = new I2CSlaveConnection(this, bus_address, connection_string, bus_name);
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on I2C bus name %s as address 0x%02x.", bus_name.c_str(), bus_address);
 
@@ -76,25 +78,22 @@ namespace Nos3
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _command_bus_name.c_str());
 
         /* Initialize status for battery and bus */
-        std::string battv, battv_temp, solararray, solararray_temp, batt_amp_hrs, always_on_v, always_on_a;
+        std::string battv, battv_temp, solararray, solararray_temp, batt_watt_hrs, always_on_v, always_on_a;
         battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
-        batt_amp_hrs = config.get("simulator.hardware-model.physical.bus.battery-amp-hours", "5.0");
+        batt_watt_hrs = config.get("simulator.hardware-model.physical.bus.battery-watt-hours", "5.0");
         solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
         solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
-        always_on_v = config.get("simulator.hardware-model.physical.always-on.main-bus-voltage", "24.0");
-        always_on_a = config.get("simulator.hardware-model.physical.always-on.main-bus-amperage", "5.0");
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
-        _bus[0]._battery_amphrs = atoi(batt_amp_hrs.c_str())*1000;
+        _bus[0]._battery_watthrs = atoi(batt_watt_hrs.c_str())*1000;
         _bus[1]._voltage = 3.3 * 1000;
         _bus[2]._voltage = 5.0 * 1000;
         _bus[3]._voltage = 12.0 * 1000;
         _bus[4]._voltage = atoi(solararray.c_str()) * 1000;
         _bus[4]._temperature = (atoi(solararray_temp.c_str()) + 60) * 100;
-        _bus[5]._voltage = atoi(always_on_v.c_str()) * 1000;
-        _bus[5]._current = atoi(always_on_a.c_str()) * 1000;
+        _bus[4]._current = 4.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
 
         /*
         sim_logger->info("  Initial _bus[0]._voltage = 0x%04x", _bus[0]._voltage);
@@ -452,6 +451,49 @@ namespace Nos3
             }
         }
         return valid;
+    }
+
+    void Generic_epsHardwareModel::update_battery_values(void)
+    {
+        // Hereabouts I need to add code to consider the state of all the different
+        // things which may or may not be on, the amount of current they may or may
+        // not be drawing, and the direction of the solar panels. 
+
+        // Basically, I need to add the following equations:
+        // P_out = sum(V_i*A_i*onoff_i), i goes over all the things
+        // P_in = A_solar*V_solar = V*solar*A_solar_max*cos(sun_angle)
+        // Batt_new = Batt + timestep(P_in - P_out)
+        double p_out = 0;
+        boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
+        for (int i = 1; i < 4; i++)
+        {
+            p_out = p_out + (_bus[i]._voltage/1000.0)*(_bus[i]._current/1000.0);
+            if (_bus[i]._voltage/1000.0 > 24 || _bus[i]._current/1000.0 > 10.0)
+            {
+                printf("Power draw for bus %i is %f\n", i, _bus[i]._voltage/1000.0*_bus[i]._current/1000.0);
+            }
+        }
+        for (int i = 0; i < 8; i++)
+        {
+            p_out = p_out + (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*_switch[i]._status;
+            if (_switch[i]._voltage/1000.0 > 24 || _switch[i]._current/1000.0 > 10.0)
+            {
+                printf("Power draw for switch %i is %f\n", i, _switch[i]._voltage/1000.0*_switch[i]._current/1000.0);
+            }
+
+        }
+        // Here is probably where I will need to put code figuring out how the
+        // amperage of the solar panels changes.
+        double panel_sun_vector = data_point->get_sun_vector_x();
+        
+        double p_in = (_bus[4]._voltage/1000.0)*(_bus[4]._current/1000.0)*panel_sun_vector;
+        double delta_p = (0.01*(p_in - p_out));
+        _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p*1000);
+        
+        printf("Panel sun vector is %f\n", panel_sun_vector);
+        printf("Power from the solar panels is %f\n", p_in);
+        printf("Total power used is %f\n", p_out);
+        printf("Battery Watt Hours are now %i\n", _bus[0]._battery_watthrs);
     }
 
     I2CSlaveConnection::I2CSlaveConnection(Generic_epsHardwareModel* hm,

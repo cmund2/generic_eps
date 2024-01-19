@@ -75,19 +75,18 @@ namespace Nos3
             std::uint16_t _current;
             std::uint16_t _status;
             std::uint16_t _temperature;
-            std::uint16_t _battery_amphrs;
+            std::uint16_t _battery_watthrs;
         };
 
         Init_Switch_State                                   _init_switch[8];
         EPS_Rail                                            _switch[8];
-        EPS_Rail                                            _bus[6];
+        EPS_Rail                                            _bus[5];
                                                                 /*
                                                                 0 - Battery
                                                                 1 - 3.3v
                                                                 2 - 5.0v
                                                                 3 - 12.0v
                                                                 4 - Solar Array
-                                                                5 - Always on stuff
                                                                 */
 
         std::uint8_t                                        _enabled;
