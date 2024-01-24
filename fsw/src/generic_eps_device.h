@@ -8,6 +8,7 @@
 #ifndef _GENERIC_EPS_DEVICE_H_
 #define _GENERIC_EPS_DEVICE_H_
 
+#define GENERIC_EPS_CFG_DEBUG 1
 /*
 ** Required header files.
 */
@@ -34,6 +35,7 @@ typedef struct
 {
     uint16_t  BatteryVoltage;
     uint16_t  BatteryTemperature;
+    uint16_t  BatteryWatthrs;
     uint16_t  Bus3p3Voltage;
     uint16_t  Bus5p0Voltage;
     uint16_t  Bus12Voltage;

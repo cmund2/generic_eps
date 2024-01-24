@@ -303,29 +303,32 @@ namespace Nos3
         /* Battery  - Temperature */
         out_data[2] = (_bus[0]._temperature >> 8) & 0x00FF; 
         out_data[3] = _bus[0]._temperature & 0x00FF;
+        /* Battery  - Watt-hours */
+        out_data[4] = (_bus[0]._battery_watthrs >> 8) & 0x00FF;
+        out_data[5] = _bus[0]._battery_watthrs & 0x00FF;
         
         /* EPS      - 3.3 Voltage */
-        out_data[4] = (_bus[1]._voltage >> 8) & 0x00FF; 
-        out_data[5] = _bus[1]._voltage & 0x00FF; 
+        out_data[6] = (_bus[1]._voltage >> 8) & 0x00FF; 
+        out_data[7] = _bus[1]._voltage & 0x00FF; 
         /* EPS      - 5.0 Voltage */
-        out_data[6] = (_bus[2]._voltage >> 8) & 0x00FF;
-        out_data[7] = _bus[2]._voltage & 0x00FF;
+        out_data[8] = (_bus[2]._voltage >> 8) & 0x00FF;
+        out_data[9] = _bus[2]._voltage & 0x00FF;
         /* EPS      - 12.0 Voltage */
-        out_data[8] = (_bus[3]._voltage >> 8) & 0x00FF; 
-        out_data[9] = _bus[3]._voltage & 0x00FF; 
+        out_data[10] = (_bus[3]._voltage >> 8) & 0x00FF; 
+        out_data[11] = _bus[3]._voltage & 0x00FF; 
         /* EPS      - Temperature */
-        out_data[10] = (_bus[3]._voltage >> 8) & 0x00FF;
-        out_data[11] = _bus[3]._voltage & 0x00FF;
+        out_data[12] = (_bus[3]._voltage >> 8) & 0x00FF;
+        out_data[13] = _bus[3]._voltage & 0x00FF;
 
         /* Solar Array - Voltage */
-        out_data[12] = (_bus[4]._voltage >> 8) & 0x00FF;
-        out_data[13] = _bus[4]._voltage & 0x00FF;
+        out_data[14] = (_bus[4]._voltage >> 8) & 0x00FF;
+        out_data[15] = _bus[4]._voltage & 0x00FF;
         /* Solar Array - Temperature */
-        out_data[14] = (_bus[4]._temperature >> 8) & 0x00FF;
-        out_data[15] = _bus[4]._temperature & 0x00FF;
+        out_data[16] = (_bus[4]._temperature >> 8) & 0x00FF;
+        out_data[17] = _bus[4]._temperature & 0x00FF;
 
         std::uint16_t i = 0;
-        std::uint16_t offset = 16;
+        std::uint16_t offset = 18;
         for(i = 0; i < 8; i++)
         {
             if ((_switch[i]._status & 0x00FF) == 0x00AA)
@@ -467,19 +470,32 @@ namespace Nos3
         boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
         for (int i = 1; i < 4; i++)
         {
+//            printf("[%i - %f] ", i, (_bus[i]._voltage/1000.0)*(_bus[i]._current/1000.0));
+
             p_out = p_out + (_bus[i]._voltage/1000.0)*(_bus[i]._current/1000.0);
-            if (_bus[i]._voltage/1000.0 > 24 || _bus[i]._current/1000.0 > 10.0)
-            {
-                printf("Power draw for bus %i is %f\n", i, _bus[i]._voltage/1000.0*_bus[i]._current/1000.0);
-            }
+//            if (_bus[i]._voltage/1000.0 > 24 || _bus[i]._current/1000.0 > 10.0)
+//            {
+//                printf("Power draw for bus %i is %f\n", i, _bus[i]._voltage/1000.0*_bus[i]._current/1000.0);
+//            }
         }
         for (int i = 0; i < 8; i++)
         {
-            p_out = p_out + (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*_switch[i]._status;
-            if (_switch[i]._voltage/1000.0 > 24 || _switch[i]._current/1000.0 > 10.0)
+            int switchonoff = 0;
+            if (_switch[i]._status != 0)
             {
-                printf("Power draw for switch %i is %f\n", i, _switch[i]._voltage/1000.0*_switch[i]._current/1000.0);
+                switchonoff = 1;
             }
+//            printf("[%i - %f] ", i, (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*switchonoff);
+//            if (i == 0 || i == 1 || i == 7)
+//            {
+//                printf("Current: %f, Voltage: %f, Status: %i ", _switch[i]._current/1000.0, _switch[i]._voltage/1000.0, _switch[i]._status);
+//            }
+
+            p_out = p_out + (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*switchonoff;
+//            if (_switch[i]._voltage/1000.0 > 24 || _switch[i]._current/1000.0 > 10.0)
+//            {
+//                printf("Power draw for switch %i is %f\n", i, _switch[i]._voltage/1000.0*_switch[i]._current/1000.0);
+//            }
 
         }
         // Here is probably where I will need to put code figuring out how the
@@ -490,10 +506,10 @@ namespace Nos3
         double delta_p = (0.01*(p_in - p_out));
         _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p*1000);
         
-        printf("Panel sun vector is %f\n", panel_sun_vector);
-        printf("Power from the solar panels is %f\n", p_in);
-        printf("Total power used is %f\n", p_out);
-        printf("Battery Watt Hours are now %i\n", _bus[0]._battery_watthrs);
+//        printf("Panel sun vector is %f\n", panel_sun_vector);
+//        printf("Power from the solar panels is %f\n", p_in);
+//        printf("Total power used is %f\n", p_out);
+//        printf("Battery Watt Hours are now %i\n", _bus[0]._battery_watthrs);
     }
 
     I2CSlaveConnection::I2CSlaveConnection(Generic_epsHardwareModel* hm,
