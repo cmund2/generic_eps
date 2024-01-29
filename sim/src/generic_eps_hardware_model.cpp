@@ -303,32 +303,29 @@ namespace Nos3
         /* Battery  - Temperature */
         out_data[2] = (_bus[0]._temperature >> 8) & 0x00FF; 
         out_data[3] = _bus[0]._temperature & 0x00FF;
-        /* Battery  - Watt-hours */
-        out_data[4] = (_bus[0]._battery_watthrs >> 8) & 0x00FF;
-        out_data[5] = _bus[0]._battery_watthrs & 0x00FF;
         
         /* EPS      - 3.3 Voltage */
-        out_data[6] = (_bus[1]._voltage >> 8) & 0x00FF; 
-        out_data[7] = _bus[1]._voltage & 0x00FF; 
+        out_data[4] = (_bus[1]._voltage >> 8) & 0x00FF; 
+        out_data[5] = _bus[1]._voltage & 0x00FF; 
         /* EPS      - 5.0 Voltage */
-        out_data[8] = (_bus[2]._voltage >> 8) & 0x00FF;
-        out_data[9] = _bus[2]._voltage & 0x00FF;
+        out_data[6] = (_bus[2]._voltage >> 8) & 0x00FF;
+        out_data[7] = _bus[2]._voltage & 0x00FF;
         /* EPS      - 12.0 Voltage */
-        out_data[10] = (_bus[3]._voltage >> 8) & 0x00FF; 
-        out_data[11] = _bus[3]._voltage & 0x00FF; 
+        out_data[8] = (_bus[3]._voltage >> 8) & 0x00FF; 
+        out_data[9] = _bus[3]._voltage & 0x00FF; 
         /* EPS      - Temperature */
-        out_data[12] = (_bus[3]._voltage >> 8) & 0x00FF;
-        out_data[13] = _bus[3]._voltage & 0x00FF;
+        out_data[10] = (_bus[3]._voltage >> 8) & 0x00FF;
+        out_data[11] = _bus[3]._voltage & 0x00FF;
 
         /* Solar Array - Voltage */
-        out_data[14] = (_bus[4]._voltage >> 8) & 0x00FF;
-        out_data[15] = _bus[4]._voltage & 0x00FF;
+        out_data[12] = (_bus[4]._voltage >> 8) & 0x00FF;
+        out_data[13] = _bus[4]._voltage & 0x00FF;
         /* Solar Array - Temperature */
-        out_data[16] = (_bus[4]._temperature >> 8) & 0x00FF;
-        out_data[17] = _bus[4]._temperature & 0x00FF;
+        out_data[14] = (_bus[4]._temperature >> 8) & 0x00FF;
+        out_data[15] = _bus[4]._temperature & 0x00FF;
 
         std::uint16_t i = 0;
-        std::uint16_t offset = 18;
+        std::uint16_t offset = 16;
         for(i = 0; i < 8; i++)
         {
             if ((_switch[i]._status & 0x00FF) == 0x00AA)

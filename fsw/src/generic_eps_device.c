@@ -84,7 +84,7 @@ int32_t GENERIC_EPS_RequestHK(i2c_bus_info_t* device, GENERIC_EPS_Device_HK_tlm_
     uint8_t write_data[3] = {0};
     uint8_t read_data[GENERIC_EPS_DEVICE_HK_LEN+1] = {0};
     uint8_t calc_crc = 0;
-    uint8_t offset = 18;
+    uint8_t offset = 16;
 
     /* Prepare command */
     write_data[0] = 0x70;
@@ -104,15 +104,14 @@ int32_t GENERIC_EPS_RequestHK(i2c_bus_info_t* device, GENERIC_EPS_Device_HK_tlm_
         /* Interpret Data */
         data->BatteryVoltage        = (read_data[0] << 8) | read_data[1];
         data->BatteryTemperature    = (read_data[2] << 8) | read_data[3];
-        data->BatteryWatthrs        = (read_data[4] << 8) | read_data[5];
 
-        data->Bus3p3Voltage         = (read_data[6] << 8) | read_data[7];
-        data->Bus5p0Voltage         = (read_data[8] << 8) | read_data[9];
-        data->Bus12Voltage          = (read_data[10] << 8) | read_data[11];
-        data->EPSTemperature        = (read_data[12] << 8) | read_data[13];
+        data->Bus3p3Voltage         = (read_data[4] << 8) | read_data[5];
+        data->Bus5p0Voltage         = (read_data[6] << 8) | read_data[7];
+        data->Bus12Voltage          = (read_data[8] << 8) | read_data[9];
+        data->EPSTemperature        = (read_data[10] << 8) | read_data[11];
 
-        data->SolarArrayVoltage     = (read_data[14] << 8) | read_data[15];
-        data->SolarArrayTemperature = (read_data[16] << 8) | read_data[17];
+        data->SolarArrayVoltage     = (read_data[12] << 8) | read_data[13];
+        data->SolarArrayTemperature = (read_data[14] << 8) | read_data[15];
 
         for(uint8_t i = 0; i < 8; i++)
         {

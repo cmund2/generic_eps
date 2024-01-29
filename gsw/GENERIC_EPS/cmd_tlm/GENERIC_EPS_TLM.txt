@@ -13,7 +13,6 @@ TELEMETRY GENERIC_EPS GENERIC_EPS_HK_TLM LITTLE_ENDIAN "GENERIC_EPS_Hk_tlm_t"
   # GENERIC_EPS_Device_HK_tlm_t
   APPEND_ITEM    RAW_BATTERY_VOLTAGE      16 UINT     "Battery Voltage"
   APPEND_ITEM    RAW_BATTERY_TEMPERATURE  16 UINT     "Battery Temperature"
-  APPEND_ITEM    RAW_BATTERY_WATTHRS      16 UINT     "Battery Watt-Hrs"
   APPEND_ITEM    RAW_BUS_3P3V             16 UINT     "Bus 3.3 Volt Rail"
   APPEND_ITEM    RAW_BUS_5P0V             16 UINT     "Bus 5.0 Volt Rail"
   APPEND_ITEM    RAW_BUS_12V              16 UINT     "Bus 12 Volt Rail"
