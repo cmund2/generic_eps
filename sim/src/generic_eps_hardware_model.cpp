@@ -87,7 +87,7 @@ namespace Nos3
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
-        _bus[0]._battery_watthrs = atoi(batt_watt_hrs.c_str())*1000;
+        //_bus[0]._battery_watthrs = atoi(batt_watt_hrs.c_str())*1000;
         _bus[1]._voltage = 3.3 * 1000;
         _bus[2]._voltage = 5.0 * 1000;
         _bus[3]._voltage = 12.0 * 1000;
@@ -455,6 +455,18 @@ namespace Nos3
 
     void Generic_epsHardwareModel::update_battery_values(void)
     {
+        //sim_logger->debug("Generic_epsHardwareModel::update_battery_values");
+        boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
+        double svb_X = data_point->get_sun_vector_x();
+        double svb_Y = data_point->get_sun_vector_y();
+        double svb_Z = data_point->get_sun_vector_z();
+        sim_logger->debug("Generic_epsHardwareModel::update_battery_values:  X = %.3f; Y = %.3f; Z = %.3f;", svb_X, svb_Y, svb_Z);
+
+        /* Note: Assuming solar arrays on all +/- X, Y, and Z faces */
+        /* TODO: Add configuration options for maximum power generated from each face */
+
+        /*
+
         // Hereabouts I need to add code to consider the state of all the different
         // things which may or may not be on, the amount of current they may or may
         // not be drawing, and the direction of the solar panels. 
@@ -463,8 +475,8 @@ namespace Nos3
         // P_out = sum(V_i*A_i*onoff_i), i goes over all the things
         // P_in = A_solar*V_solar = V*solar*A_solar_max*cos(sun_angle)
         // Batt_new = Batt + timestep(P_in - P_out)
-        double p_out = 0;
-        boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
+        std::vector<float> p_out = 0;
+        
         for (int i = 1; i < 4; i++)
         {
 //            printf("[%i - %f] ", i, (_bus[i]._voltage/1000.0)*(_bus[i]._current/1000.0));
@@ -489,24 +501,23 @@ namespace Nos3
 //            }
 
             p_out = p_out + (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*switchonoff;
+
 //            if (_switch[i]._voltage/1000.0 > 24 || _switch[i]._current/1000.0 > 10.0)
 //            {
 //                printf("Power draw for switch %i is %f\n", i, _switch[i]._voltage/1000.0*_switch[i]._current/1000.0);
 //            }
 
         }
-        // Here is probably where I will need to put code figuring out how the
-        // amperage of the solar panels changes.
-        double panel_sun_vector = data_point->get_sun_vector_x();
         
-        double p_in = (_bus[4]._voltage/1000.0)*(_bus[4]._current/1000.0)*panel_sun_vector;
-        double delta_p = (0.01*(p_in - p_out));
-        _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p*1000);
+        std::vector<float> p_in = (_bus[4]._voltage/1000.0) * (_bus[4]._current/1000.0) * svb_X;
+        std::vector<float> delta_p = (0.01 * (p_in - p_out));
+        _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p * 1000);
         
-//        printf("Panel sun vector is %f\n", panel_sun_vector);
+//        printf("Panel sun vector is %f\n", svb_X);
 //        printf("Power from the solar panels is %f\n", p_in);
 //        printf("Total power used is %f\n", p_out);
 //        printf("Battery Watt Hours are now %i\n", _bus[0]._battery_watthrs);
+        */
     }
 
     I2CSlaveConnection::I2CSlaveConnection(Generic_epsHardwareModel* hm,
