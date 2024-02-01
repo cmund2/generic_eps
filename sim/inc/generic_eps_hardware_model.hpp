@@ -75,6 +75,7 @@ namespace Nos3
             std::uint16_t _current;
             std::uint16_t _status;
             std::uint16_t _temperature;
+            std::uint16_t _battery_watthrs;
         };
 
         Init_Switch_State                                   _init_switch[8];
