@@ -75,7 +75,7 @@ namespace Nos3
             std::uint16_t _current;
             std::uint16_t _status;
             std::uint16_t _temperature;
-            std::uint16_t _battery_watthrs;
+            double        _battery_watthrs;
         };
 
         Init_Switch_State                                   _init_switch[8];
@@ -91,6 +91,10 @@ namespace Nos3
 
         std::uint8_t                                        _enabled;
         std::uint8_t                                        _initialized_other_sims;
+
+        double                                              _power_per_panel;
+        double                                              _max_battery;
+        double                                              _nominal_batt_voltage;
     };
 
     class I2CSlaveConnection : public NosEngine::I2C::I2CSlave

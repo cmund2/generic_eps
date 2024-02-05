@@ -79,21 +79,34 @@ namespace Nos3
 
         /* Initialize status for battery and bus */
         std::string battv, battv_temp, solararray, solararray_temp, batt_watt_hrs, always_on_v, always_on_a;
+
+        // Below, the battery watt-hrs variable arbitrarily selected - it could well 
+        // do to be changed to be more in line with true spacecraft values.
+        // Additionally, the current values (as indicated) are placeholders and should
+        // probably be changed to something more correct.
+
+        _power_per_panel = 26.91; //Power generated, in Watts; data taken from GTOSat
+
         battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
-        batt_watt_hrs = config.get("simulator.hardware-model.physical.bus.battery-watt-hours", "5.0");
+        batt_watt_hrs = config.get("simulator.hardware-model.physical.bus.battery-watt-hrs", "10.0");
         solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
         solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
+
+        _nominal_batt_voltage = atoi(battv.c_str());
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
-        _bus[0]._battery_watthrs = atoi(batt_watt_hrs.c_str())*1000;
+        _bus[0]._battery_watthrs = atof(batt_watt_hrs.c_str());
         _bus[1]._voltage = 3.3 * 1000;
         _bus[2]._voltage = 5.0 * 1000;
         _bus[3]._voltage = 12.0 * 1000;
         _bus[4]._voltage = atoi(solararray.c_str()) * 1000;
         _bus[4]._temperature = (atoi(solararray_temp.c_str()) + 60) * 100;
         _bus[4]._current = 4.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
+        _bus[1]._current = 1.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
+        _bus[2]._current = 1.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
+        _bus[3]._current = 1.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
 
         /*
         sim_logger->info("  Initial _bus[0]._voltage = 0x%04x", _bus[0]._voltage);
@@ -458,63 +471,53 @@ namespace Nos3
         //sim_logger->debug("Generic_epsHardwareModel::update_battery_values");
         boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
         double svb_X = (data_point->get_sun_vector_x() > 0) ? data_point->get_sun_vector_x() : 0.0;
+        double svb_minusX = (data_point->get_sun_vector_x() < 0) ? (-1)*data_point->get_sun_vector_x() : 0.0;
         double svb_Y = (data_point->get_sun_vector_y() > 0) ? data_point->get_sun_vector_y() : 0.0;
         double svb_Z = (data_point->get_sun_vector_z() > 0) ? data_point->get_sun_vector_z() : 0.0;
-
-//        double svb_X = data_point->get_sun_vector_x();
-//        double svb_Y = data_point->get_sun_vector_y();
-//        double svb_Z = data_point->get_sun_vector_z();
 
         sim_logger->debug("Generic_epsHardwareModel::update_battery_values:  X = %.3f; Y = %.3f; Z = %.3f;", svb_X, svb_Y, svb_Z);
 
         /* Note: Assuming solar arrays on all +/- X, Y, and Z faces */
-        /* TODO: Add configuration options for maximum power generated from each face */
-        // SOME NOTES FOR MY OWN PURPOSES:
         // The "cosine effect" is the most relevant part, affecting the power 
         // received. I have no idea if it impacts the voltage or the current,
         // but theoretically it should not matter - I can just multiply times
         // the whole thing.
+        // Technically, when the angle to the sun is greater than 45 degrees
+        // there begins to be significant light reflected away, an effect which
+        // is not replicated here.
 
         double p_out = 0;
 
-        double p_per_panel = 40.0; //An arbitrary number for the power supplied per solar panel
-        
         for (int i = 1; i < 4; i++)
         {
-//            printf("[%i - %f] ", i, (_bus[i]._voltage/1000.0)*(_bus[i]._current/1000.0));
-
             p_out = p_out + (_bus[i]._voltage/1000.0)*(_bus[i]._current/1000.0);
-//            if (_bus[i]._voltage/1000.0 > 24 || _bus[i]._current/1000.0 > 10.0)
-//            {
-//                printf("Power draw for bus %i is %f\n", i, _bus[i]._voltage/1000.0*_bus[i]._current/1000.0);
-//            }
         }
         for (int i = 0; i < 8; i++)
         {
             int switchonoff = (_switch[i]._status != 0) ? 1 : 0;
-//            printf("[%i - %f] ", i, (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*switchonoff);
-//            if (i == 0 || i == 1 || i == 7)
-//            {
-//                printf("Current: %f, Voltage: %f, Status: %i ", _switch[i]._current/1000.0, _switch[i]._voltage/1000.0, _switch[i]._status);
-//            }
-
             p_out = p_out + (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*switchonoff;
-
-//            if (_switch[i]._voltage/1000.0 > 24 || _switch[i]._current/1000.0 > 10.0)
-//            {
-//                printf("Power draw for switch %i is %f\n", i, _switch[i]._voltage/1000.0*_switch[i]._current/1000.0);
-//            }
 
         }
         
-        double p_in = p_per_panel*svb_X + p_per_panel*(-1)*svb_X + p_per_panel*svb_Y + p_per_panel*svb_Z;
+        double p_in = _power_per_panel*svb_X + _power_per_panel*svb_minusX + _power_per_panel*svb_Y + _power_per_panel*svb_Z;
         double delta_p = (0.01 * (p_in - p_out));
-        _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p * 1000);
-        
-        printf("Panel sun vector is %f\n", svb_X);
-        printf("Power from the solar panels is %f\n", p_in);
-        printf("Total power used is %f\n", p_out);
-        printf("Battery Watt Hours are now %i\n", _bus[0]._battery_watthrs);
+        _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p/3600); //The 3600 is for converting Watt-seconds (the units of delta_p) into watt-hours
+
+        // Here is the code to increase or decrease the value of the battery 
+        // voltage. It is linear and +- 5% of the nominal voltage, which is
+        // a value I came across when doing some research.
+
+        double batt_min_voltage = 0.95*_nominal_batt_voltage;
+        double batt_diff = 0.1*_nominal_batt_voltage;
+
+        _bus[0]._voltage = 1000*(batt_min_voltage + batt_diff*(_bus[0]._battery_watthrs / _max_battery));
+
+// DEBUG MESSAGES        
+//        printf("Panel sun vector is %f\n", svb_X);
+//        printf("Power from the solar panels is %f\n", p_in);
+//        printf("Total power used is %f\n", p_out);
+//        printf("Battery Watt Hours are now %f\n", _bus[0]._battery_watthrs);
+//        printf("Battery Voltage is now %i\n", _bus[0]._voltage);
         
     }
 
