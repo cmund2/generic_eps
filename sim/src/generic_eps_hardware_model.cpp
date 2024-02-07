@@ -94,6 +94,7 @@ namespace Nos3
         solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
 
         _nominal_batt_voltage = atoi(battv.c_str());
+        _max_battery = atof(batt_watt_hrs.c_str());
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
