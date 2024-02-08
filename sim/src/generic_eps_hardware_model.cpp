@@ -77,21 +77,34 @@ namespace Nos3
         _command_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, _command_bus_name));
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _command_bus_name.c_str());
 
-        /* Initialize status for battery and bus */
-        std::string battv, battv_temp, solararray, solararray_temp, batt_watt_hrs, always_on_v, always_on_a;
+        /* Initialize status for battery and solar panels */
+        std::string battv, battv_temp, solararray, solararray_current, solararray_temp, batt_watt_hrs, always_on_v, always_on_a;
 
         // Below, the battery watt-hrs variable arbitrarily selected - it could well 
         // do to be changed to be more in line with true spacecraft values.
         // Additionally, the current values (as indicated) are placeholders and should
         // probably be changed to something more correct.
 
-        _power_per_panel = 26.91; //Power generated, in Watts; data taken from GTOSat
+        _power_per_panel = atof(config.get("simulator.hardware-model.physical.bus.solar-array-power-per-panel", "26.91").c_str()); //Power generated, in Watts; data taken from GTOSat
 
         battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
         batt_watt_hrs = config.get("simulator.hardware-model.physical.bus.battery-watt-hrs", "10.0");
         solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
         solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
+        solararray_current = config.get("simulator.hardware-model.physical.bus.solar-array-current", "4.0");
+
+
+        /* Initialize status for buses */
+        std::string bus_low_volt, bus_mid_volt, bus_high_volt, bus_low_current, bus_mid_current, bus_high_current;
+
+        bus_low_volt = config.get("simulator.hardware-model.physical.bus.bus-low-voltage", "3.3");
+        bus_mid_volt = config.get("simulator.hardware-model.physical.bus.bus-mid-voltage", "5.0");
+        bus_high_volt = config.get("simulator.hardware-model.physical.bus.bus-high-voltage", "12.0");
+
+        bus_low_current = config.get("simulator.hardware-model.physical.bus.bus-low-current", "1.0");
+        bus_mid_current = config.get("simulator.hardware-model.physical.bus.bus-mid-current", "1.0");
+        bus_high_current = config.get("simulator.hardware-model.physical.bus.bus-high-current", "1.0");
 
         _nominal_batt_voltage = atoi(battv.c_str());
         _max_battery = atof(batt_watt_hrs.c_str());
@@ -99,15 +112,15 @@ namespace Nos3
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
         _bus[0]._battery_watthrs = atof(batt_watt_hrs.c_str());
-        _bus[1]._voltage = 3.3 * 1000;
-        _bus[2]._voltage = 5.0 * 1000;
-        _bus[3]._voltage = 12.0 * 1000;
+        _bus[1]._voltage = atof(bus_low_volt.c_str()) * 1000;
+        _bus[2]._voltage = atof(bus_mid_volt.c_str()) * 1000;
+        _bus[3]._voltage = atof(bus_high_volt.c_str()) * 1000;
         _bus[4]._voltage = atoi(solararray.c_str()) * 1000;
         _bus[4]._temperature = (atoi(solararray_temp.c_str()) + 60) * 100;
-        _bus[4]._current = 4.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
-        _bus[1]._current = 1.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
-        _bus[2]._current = 1.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
-        _bus[3]._current = 1.0 * 1000; //PLACEHOLDER; CHANGE WHEN APPROPRIATE
+        _bus[4]._current = atof(solararray_current.c_str()) * 1000; 
+        _bus[1]._current = atof(bus_low_current.c_str()) * 1000; 
+        _bus[2]._current = atof(bus_mid_current.c_str()) * 1000; 
+        _bus[3]._current = atof(bus_high_current.c_str()) * 1000; 
 
         /*
         sim_logger->info("  Initial _bus[0]._voltage = 0x%04x", _bus[0]._voltage);
@@ -517,8 +530,8 @@ namespace Nos3
 //        printf("Panel sun vector is %f\n", svb_X);
 //        printf("Power from the solar panels is %f\n", p_in);
 //        printf("Total power used is %f\n", p_out);
-//        printf("Battery Watt Hours are now %f\n", _bus[0]._battery_watthrs);
-//        printf("Battery Voltage is now %i\n", _bus[0]._voltage);
+        printf("Battery Watt Hours are now %f\n", _bus[0]._battery_watthrs);
+        printf("Battery Voltage is now %i\n", _bus[0]._voltage);
         
     }
 

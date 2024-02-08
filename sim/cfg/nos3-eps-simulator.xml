@@ -24,10 +24,17 @@
                     <bus>
                         <battery-voltage>24.0</battery-voltage>
                         <battery-temperature>30.0</battery-temperature>
-                        <battery-amp-hours>5.00</battery-amp-hours>
+                        <battery-watt-hours>10.00</battery-watt-hours>
                         <solar-array-voltage>32.0</solar-array-voltage>
+                        <solar-array-current>4.0</solar-array-current>
                         <solar-array-temperature>80.0</solar-array-temperature>
-                        <solar-array-max-amperage>5.00</solar-array-max-amperage>
+                        <solar-array-power-per-panel>26.91</solar-array-power-per-panel>
+                        <bus-low-voltage>3.3</bus-low-voltage>
+                        <bus-mid-voltage>5.0</bus-mid-voltage>
+                        <bus-high-voltage>12.0</bus-high-voltage>
+                        <bus-low-current>1.0</bus-low-current>
+                        <bus-mid-current>1.0</bus-mid-current>
+                        <bus-high-current>1.0</bus-high-current>
                     </bus>
                     <always-on>
                         <main-bus-voltage>24.0</main-bus-voltage>
