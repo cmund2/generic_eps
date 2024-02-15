@@ -514,7 +514,7 @@ namespace Nos3
         }
         
         double p_in = _power_per_panel*svb_X + _power_per_panel*svb_minusX + _power_per_panel*svb_Y + _power_per_panel*svb_Z;
-        double delta_p = (0.01 * (p_in - p_out));
+        double delta_p = (_sim_microseconds_per_tick/1000000.0 * (p_in - p_out));
         _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p/3600); //The 3600 is for converting Watt-seconds (the units of delta_p) into watt-hours
 
         // Here is the code to increase or decrease the value of the battery 
