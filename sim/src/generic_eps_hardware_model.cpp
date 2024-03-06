@@ -417,7 +417,7 @@ namespace Nos3
             /* Check if message is incorrect size */
             if (in_data.size() != 3)
             {
-                sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Invalid command size of %d received!", in_data.size());
+                sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Invalid command size of %ld received!", in_data.size());
                 valid = GENERIC_EPS_SIM_ERROR;
             }
             else
@@ -551,7 +551,7 @@ namespace Nos3
             {
                 rbuf[num_read] = _i2c_out_data[num_read];
             }
-            sim_logger->debug("i2c_read[%d]: %s", num_read, SimIHardwareModel::uint8_vector_to_hex_string(_i2c_out_data).c_str());
+            sim_logger->debug("i2c_read[%ld]: %s", num_read, SimIHardwareModel::uint8_vector_to_hex_string(_i2c_out_data).c_str());
         }
         else
         {
@@ -559,7 +559,7 @@ namespace Nos3
             {
                 rbuf[num_read] = 0x00;
             }
-            sim_logger->debug("i2c_read[%d]: Invalid (0x00)", num_read);
+            sim_logger->debug("i2c_read[%ld]: Invalid (0x00)", num_read);
         }
 
         return num_read;
