@@ -48,7 +48,6 @@ int32_t GENERIC_EPS_CommandDevice(i2c_bus_info_t* device, uint8_t cmd, uint8_t v
 {
     int32_t status = OS_SUCCESS;
     uint8_t write_data[3] = {0};
-    uint8_t i;
 
     /* Confirm command valid */
     if (cmd < 0xAB)

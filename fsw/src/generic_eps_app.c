@@ -338,7 +338,6 @@ void GENERIC_EPS_ProcessGroundCommand(void)
 */
 void GENERIC_EPS_ProcessTelemetryRequest(void)
 {
-    int32 status = OS_SUCCESS;
     CFE_SB_MsgId_t MsgId = CFE_SB_INVALID_MSG_ID;
     CFE_MSG_FcnCode_t CommandCode = 0;
 
