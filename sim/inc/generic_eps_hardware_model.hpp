@@ -47,6 +47,7 @@ namespace Nos3
         void eps_switch_update(const std::uint8_t sw_num, uint8_t sw_status);
         std::uint8_t generic_eps_crc8(const std::vector<uint8_t>& crc_data, std::uint32_t crc_size);
         void create_generic_eps_data(std::vector<uint8_t>& out_data); 
+        void update_battery_values(void);
 
         /* Private data members */
         class I2CSlaveConnection*                           _i2c_slave_connection;
@@ -55,6 +56,9 @@ namespace Nos3
         std::unique_ptr<NosEngine::Client::Bus>             _command_bus; /* Standard */
 
         SimIDataProvider*                                   _generic_eps_dp;
+
+        /* Time Bus */
+        std::unique_ptr<NosEngine::Client::Bus>             _time_bus;
 
         /* Internal switch data */
         struct Init_Switch_State
@@ -71,6 +75,7 @@ namespace Nos3
             std::uint16_t _current;
             std::uint16_t _status;
             std::uint16_t _temperature;
+            double        _battery_watthrs;
         };
 
         Init_Switch_State                                   _init_switch[8];
@@ -86,6 +91,10 @@ namespace Nos3
 
         std::uint8_t                                        _enabled;
         std::uint8_t                                        _initialized_other_sims;
+
+        double                                              _power_per_panel;
+        double                                              _max_battery;
+        double                                              _nominal_batt_voltage;
     };
 
     class I2CSlaveConnection : public NosEngine::I2C::I2CSlave

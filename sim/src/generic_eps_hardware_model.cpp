@@ -13,6 +13,21 @@ namespace Nos3
         std::string connection_string = config.get("common.nos-connection-string", "tcp://127.0.0.1:12001"); 
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  NOS Engine connection string: %s.", connection_string.c_str());
 
+        // Set up the time node which is **required** for this model
+        std::string time_bus_name = "command";
+        if (config.get_child_optional("hardware-model.connections")) {
+            BOOST_FOREACH(const boost::property_tree::ptree::value_type &v, config.get_child("hardware-model.connections")) {
+                // v.first is the name of the child.
+                // v.second is the child tree.
+                if (v.second.get("type", "").compare("time") == 0) {
+                    time_bus_name = v.second.get("bus-name", "command");
+                    break;
+                }
+            }
+        }
+        _time_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, time_bus_name));
+        sim_logger->debug("Generic_epsHardwareModel::Generic_epsHardwareModel:  Time bus %s now active.", time_bus_name.c_str());
+
         /* Get a data provider */
         std::string dp_name = config.get("simulator.hardware-model.data-provider.type", "GENERIC_EPS_PROVIDER");
         _generic_eps_dp = SimDataProviderFactory::Instance().Create(dp_name, config);
@@ -37,6 +52,8 @@ namespace Nos3
                 }
             }
         }
+        _time_bus->add_time_tick_callback(std::bind(&Generic_epsHardwareModel::update_battery_values, this));
+
         _i2c_slave_connection = new I2CSlaveConnection(this, bus_address, connection_string, bus_name);
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on I2C bus name %s as address 0x%02x.", bus_name.c_str(), bus_address);
 
@@ -60,20 +77,50 @@ namespace Nos3
         _command_bus.reset(new NosEngine::Client::Bus(_hub, connection_string, _command_bus_name));
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _command_bus_name.c_str());
 
-        /* Initialize status for battery and bus */
-        std::string battv, battv_temp, solararray, solararray_temp;
+        /* Initialize status for battery and solar panels */
+        std::string battv, battv_temp, solararray, solararray_current, solararray_temp, batt_watt_hrs, always_on_v, always_on_a;
+
+        // Below, the battery watt-hrs variable arbitrarily selected - it could well 
+        // do to be changed to be more in line with true spacecraft values.
+        // Additionally, the current values (as indicated) are placeholders and should
+        // probably be changed to something more correct.
+
+        _power_per_panel = atof(config.get("simulator.hardware-model.physical.bus.solar-array-power-per-panel", "26.91").c_str()); //Power generated, in Watts; data taken from GTOSat
+
         battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
+        batt_watt_hrs = config.get("simulator.hardware-model.physical.bus.battery-watt-hrs", "10.0");
         solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
         solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
+        solararray_current = config.get("simulator.hardware-model.physical.bus.solar-array-current", "4.0");
+
+
+        /* Initialize status for buses */
+        std::string bus_low_volt, bus_mid_volt, bus_high_volt, bus_low_current, bus_mid_current, bus_high_current;
+
+        bus_low_volt = config.get("simulator.hardware-model.physical.bus.bus-low-voltage", "3.3");
+        bus_mid_volt = config.get("simulator.hardware-model.physical.bus.bus-mid-voltage", "5.0");
+        bus_high_volt = config.get("simulator.hardware-model.physical.bus.bus-high-voltage", "12.0");
+
+        bus_low_current = config.get("simulator.hardware-model.physical.bus.bus-low-current", "1.0");
+        bus_mid_current = config.get("simulator.hardware-model.physical.bus.bus-mid-current", "1.0");
+        bus_high_current = config.get("simulator.hardware-model.physical.bus.bus-high-current", "1.0");
+
+        _nominal_batt_voltage = atoi(battv.c_str());
+        _max_battery = atof(batt_watt_hrs.c_str());
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
-        _bus[1]._voltage = 3.3 * 1000;
-        _bus[2]._voltage = 5.0 * 1000;
-        _bus[3]._voltage = 12.0 * 1000;
+        _bus[0]._battery_watthrs = atof(batt_watt_hrs.c_str());
+        _bus[1]._voltage = atof(bus_low_volt.c_str()) * 1000;
+        _bus[2]._voltage = atof(bus_mid_volt.c_str()) * 1000;
+        _bus[3]._voltage = atof(bus_high_volt.c_str()) * 1000;
         _bus[4]._voltage = atoi(solararray.c_str()) * 1000;
         _bus[4]._temperature = (atoi(solararray_temp.c_str()) + 60) * 100;
+        _bus[4]._current = atof(solararray_current.c_str()) * 1000; 
+        _bus[1]._current = atof(bus_low_current.c_str()) * 1000; 
+        _bus[2]._current = atof(bus_mid_current.c_str()) * 1000; 
+        _bus[3]._current = atof(bus_high_current.c_str()) * 1000; 
 
         /*
         sim_logger->info("  Initial _bus[0]._voltage = 0x%04x", _bus[0]._voltage);
@@ -370,7 +417,7 @@ namespace Nos3
             /* Check if message is incorrect size */
             if (in_data.size() != 3)
             {
-                sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Invalid command size of %d received!", in_data.size());
+                sim_logger->debug("Generic_epsHardwareModel::determine_i2c_response_for_request:  Invalid command size of %ld received!", in_data.size());
                 valid = GENERIC_EPS_SIM_ERROR;
             }
             else
@@ -433,6 +480,61 @@ namespace Nos3
         return valid;
     }
 
+    void Generic_epsHardwareModel::update_battery_values(void)
+    {
+        //sim_logger->debug("Generic_epsHardwareModel::update_battery_values");
+        boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
+        double svb_X = (data_point->get_sun_vector_x() > 0) ? data_point->get_sun_vector_x() : 0.0;
+        double svb_minusX = (data_point->get_sun_vector_x() < 0) ? (-1)*data_point->get_sun_vector_x() : 0.0;
+        double svb_Y = (data_point->get_sun_vector_y() > 0) ? data_point->get_sun_vector_y() : 0.0;
+        double svb_Z = (data_point->get_sun_vector_z() > 0) ? data_point->get_sun_vector_z() : 0.0;
+
+        sim_logger->debug("Generic_epsHardwareModel::update_battery_values:  X = %.3f; Y = %.3f; Z = %.3f;", svb_X, svb_Y, svb_Z);
+
+        /* Note: Assuming solar arrays on all +/- X, Y, and Z faces */
+        // The "cosine effect" is the most relevant part, affecting the power 
+        // received. I have no idea if it impacts the voltage or the current,
+        // but theoretically it should not matter - I can just multiply times
+        // the whole thing.
+        // Technically, when the angle to the sun is greater than 45 degrees
+        // there begins to be significant light reflected away, an effect which
+        // is not replicated here.
+
+        double p_out = 0;
+
+        for (int i = 1; i < 4; i++)
+        {
+            p_out = p_out + (_bus[i]._voltage/1000.0)*(_bus[i]._current/1000.0);
+        }
+        for (int i = 0; i < 8; i++)
+        {
+            int switchonoff = (_switch[i]._status != 0) ? 1 : 0;
+            p_out = p_out + (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*switchonoff;
+
+        }
+        
+        double p_in = _power_per_panel*svb_X + _power_per_panel*svb_minusX + _power_per_panel*svb_Y + _power_per_panel*svb_Z;
+        double delta_p = (_sim_microseconds_per_tick/1000000.0 * (p_in - p_out));
+        _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p/3600); //The 3600 is for converting Watt-seconds (the units of delta_p) into watt-hours
+
+        // Here is the code to increase or decrease the value of the battery 
+        // voltage. It is linear and +- 5% of the nominal voltage, which is
+        // a value I came across when doing some research.
+
+        double batt_min_voltage = 0.95*_nominal_batt_voltage;
+        double batt_diff = 0.1*_nominal_batt_voltage;
+
+        _bus[0]._voltage = 1000*(batt_min_voltage + batt_diff*(_bus[0]._battery_watthrs / _max_battery));
+
+// DEBUG MESSAGES        
+//        printf("Panel sun vector is %f\n", svb_X);
+//        printf("Power from the solar panels is %f\n", p_in);
+//        printf("Total power used is %f\n", p_out);
+        printf("Battery Watt Hours are now %f\n", _bus[0]._battery_watthrs);
+        printf("Battery Voltage is now %i\n", _bus[0]._voltage);
+        
+    }
+
     I2CSlaveConnection::I2CSlaveConnection(Generic_epsHardwareModel* hm,
         int bus_address, std::string connection_string, std::string bus_name)
         : NosEngine::I2C::I2CSlave(bus_address, connection_string, bus_name)
@@ -449,7 +551,7 @@ namespace Nos3
             {
                 rbuf[num_read] = _i2c_out_data[num_read];
             }
-            sim_logger->debug("i2c_read[%d]: %s", num_read, SimIHardwareModel::uint8_vector_to_hex_string(_i2c_out_data).c_str());
+            sim_logger->debug("i2c_read[%ld]: %s", num_read, SimIHardwareModel::uint8_vector_to_hex_string(_i2c_out_data).c_str());
         }
         else
         {
@@ -457,7 +559,7 @@ namespace Nos3
             {
                 rbuf[num_read] = 0x00;
             }
-            sim_logger->debug("i2c_read[%d]: Invalid (0x00)", num_read);
+            sim_logger->debug("i2c_read[%ld]: Invalid (0x00)", num_read);
         }
 
         return num_read;
