@@ -95,7 +95,7 @@ int process_command(int cc, int num_tokens, char* tokens)
         case CMD_HK:
             if (check_number_arguments(num_tokens, 1) == OS_SUCCESS)
             {
-                status = GENERIC_EPS_RequestHK(Generic_epsI2C.handle, &Generic_epsHK);
+                status = GENERIC_EPS_RequestHK(&Generic_epsI2C, &Generic_epsHK);
                 if (status == OS_SUCCESS)
                 {
                     OS_printf("GENERIC_EPS_RequestHK command success\n");
@@ -118,7 +118,7 @@ int process_command(int cc, int num_tokens, char* tokens)
                     /* Check value valid */
                     if ((value == 0x00) || (value == 0xAA))
                     {
-                        status = GENERIC_EPS_CommandSwitch(Generic_epsI2C.handle, switch_num, value, &Generic_epsHK);
+                        status = GENERIC_EPS_CommandSwitch(&Generic_epsI2C, switch_num, value, &Generic_epsHK);
                         if (status == OS_SUCCESS)
                         {
                             OS_printf("GENERIC_EPS_CommandSwitch command success\n");
