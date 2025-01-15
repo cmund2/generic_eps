@@ -161,6 +161,11 @@ int main(int argc, char *argv[])
     char* token_ptr;
     uint8_t run_status = OS_SUCCESS;
 
+    /* Initialize HWLIB */
+    #ifdef _NOS_ENGINE_LINK_
+        nos_init_link();
+    #endif
+
     /* Open device specific protocols */
     Generic_epsI2C.handle = GENERIC_EPS_CFG_I2C_HANDLE;
     Generic_epsI2C.addr = GENERIC_EPS_CFG_I2C_ADDRESS;
@@ -212,6 +217,12 @@ int main(int argc, char *argv[])
             run_status = process_command(cmd, num_input_tokens, token_ptr);
         }
     }
+
+    i2c_master_close(&Generic_epsI2C);
+
+    #ifdef _NOS_ENGINE_LINK_
+        nos_destroy_link();
+    #endif
 
     OS_printf("Cleanly exiting generic_eps application...\n\n"); 
     return 1;

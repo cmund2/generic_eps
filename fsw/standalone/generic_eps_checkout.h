@@ -27,6 +27,10 @@
 #include "device_cfg.h"
 #include "generic_eps_device.h"
 
+#if TGTNAME == cpu1
+    #include "nos_link.h"
+#endif
+
 
 /*
 ** Standard Defines
