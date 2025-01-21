@@ -75,7 +75,7 @@ int get_command(const char* str)
 }
 
 
-int process_command(int cc, int num_tokens, char* tokens)
+int process_command(int cc, int num_tokens, char tokens[MAX_INPUT_TOKENS][MAX_INPUT_TOKEN_SIZE])
 {
     int32_t status = OS_SUCCESS;
     int32_t exit_status = OS_SUCCESS;
@@ -111,14 +111,15 @@ int process_command(int cc, int num_tokens, char* tokens)
         case CMD_SWITCH:
             if (check_number_arguments(num_tokens, 2) == OS_SUCCESS)
             {
-                switch_num = atoi(&tokens[0]);
-                value = atoi(&tokens[1]);
+                switch_num = atoi(tokens[0]);
+                value = strtol(tokens[1], NULL, 16);
                 /* Check switch number valid */
                 if (switch_num < 8)
                 {
                     /* Check value valid */
                     if ((value == 0x00) || (value == 0xAA))
-                    {
+                    {   
+                        OS_printf("Running EPS_CommandSwitch() on SW: %d, Val: %02X\n", switch_num, value);
                         status = GENERIC_EPS_CommandSwitch(&Generic_epsI2C, switch_num, value, &Generic_epsHK);
                         if (status == OS_SUCCESS)
                         {
@@ -215,7 +216,7 @@ int main(int argc, char *argv[])
         if(num_input_tokens >= 0)
         {
             /* Process command */
-            run_status = process_command(cmd, num_input_tokens, token_ptr);
+            run_status = process_command(cmd, num_input_tokens, input_tokens);
         }
     }
 
