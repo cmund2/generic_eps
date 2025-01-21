@@ -70,6 +70,7 @@ int get_command(const char* str)
     {
         status = CMD_SWITCH;
     }
+    // OS_printf("CC: %d\n", status);
     return status;
 }
 
@@ -93,7 +94,7 @@ int process_command(int cc, int num_tokens, char* tokens)
             break;
 
         case CMD_HK:
-            if (check_number_arguments(num_tokens, 1) == OS_SUCCESS)
+            if (check_number_arguments(num_tokens, 0) == OS_SUCCESS)
             {
                 status = GENERIC_EPS_RequestHK(&Generic_epsI2C, &Generic_epsHK);
                 if (status == OS_SUCCESS)
@@ -108,7 +109,7 @@ int process_command(int cc, int num_tokens, char* tokens)
             break;
 
         case CMD_SWITCH:
-            if (check_number_arguments(num_tokens, 3) == OS_SUCCESS)
+            if (check_number_arguments(num_tokens, 2) == OS_SUCCESS)
             {
                 switch_num = atoi(&tokens[0]);
                 value = atoi(&tokens[1]);
