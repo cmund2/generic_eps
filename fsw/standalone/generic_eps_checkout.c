@@ -70,11 +70,12 @@ int get_command(const char* str)
     {
         status = CMD_SWITCH;
     }
+    // OS_printf("CC: %d\n", status);
     return status;
 }
 
 
-int process_command(int cc, int num_tokens, char* tokens)
+int process_command(int cc, int num_tokens, char tokens[MAX_INPUT_TOKENS][MAX_INPUT_TOKEN_SIZE])
 {
     int32_t status = OS_SUCCESS;
     int32_t exit_status = OS_SUCCESS;
@@ -93,9 +94,9 @@ int process_command(int cc, int num_tokens, char* tokens)
             break;
 
         case CMD_HK:
-            if (check_number_arguments(num_tokens, 1) == OS_SUCCESS)
+            if (check_number_arguments(num_tokens, 0) == OS_SUCCESS)
             {
-                status = GENERIC_EPS_RequestHK(Generic_epsI2C.handle, &Generic_epsHK);
+                status = GENERIC_EPS_RequestHK(&Generic_epsI2C, &Generic_epsHK);
                 if (status == OS_SUCCESS)
                 {
                     OS_printf("GENERIC_EPS_RequestHK command success\n");
@@ -108,17 +109,18 @@ int process_command(int cc, int num_tokens, char* tokens)
             break;
 
         case CMD_SWITCH:
-            if (check_number_arguments(num_tokens, 3) == OS_SUCCESS)
+            if (check_number_arguments(num_tokens, 2) == OS_SUCCESS)
             {
-                switch_num = atoi(&tokens[0]);
-                value = atoi(&tokens[1]);
+                switch_num = atoi(tokens[0]);
+                value = strtol(tokens[1], NULL, 16);
                 /* Check switch number valid */
                 if (switch_num < 8)
                 {
                     /* Check value valid */
                     if ((value == 0x00) || (value == 0xAA))
-                    {
-                        status = GENERIC_EPS_CommandSwitch(Generic_epsI2C.handle, switch_num, value, &Generic_epsHK);
+                    {   
+                        OS_printf("Running EPS_CommandSwitch() on SW: %d, Val: %02X\n", switch_num, value);
+                        status = GENERIC_EPS_CommandSwitch(&Generic_epsI2C, switch_num, value, &Generic_epsHK);
                         if (status == OS_SUCCESS)
                         {
                             OS_printf("GENERIC_EPS_CommandSwitch command success\n");
@@ -160,6 +162,11 @@ int main(int argc, char *argv[])
     int cmd;    
     char* token_ptr;
     uint8_t run_status = OS_SUCCESS;
+
+    /* Initialize HWLIB */
+    #ifdef _NOS_ENGINE_LINK_
+        nos_init_link();
+    #endif
 
     /* Open device specific protocols */
     Generic_epsI2C.handle = GENERIC_EPS_CFG_I2C_HANDLE;
@@ -209,9 +216,15 @@ int main(int argc, char *argv[])
         if(num_input_tokens >= 0)
         {
             /* Process command */
-            run_status = process_command(cmd, num_input_tokens, token_ptr);
+            run_status = process_command(cmd, num_input_tokens, input_tokens);
         }
     }
+
+    i2c_master_close(&Generic_epsI2C);
+
+    #ifdef _NOS_ENGINE_LINK_
+        nos_destroy_link();
+    #endif
 
     OS_printf("Cleanly exiting generic_eps application...\n\n"); 
     return 1;
