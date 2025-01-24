@@ -10,7 +10,7 @@
 ** Include Files
 */
 #include "generic_eps_app.h"
-
+#include "generic_eps_device.h"
 
 /*
 ** Global Data
