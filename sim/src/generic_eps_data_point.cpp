@@ -69,6 +69,13 @@ namespace Nos3
         }
     }
 
+    Generic_epsDataPoint::Generic_epsDataPoint(double svb_x, double svb_y, double svb_z)
+    {
+        _sun_vector[0] = svb_x;
+        _sun_vector[1] = svb_y;
+        _sun_vector[2] = svb_z;
+    }
+
     /* Used for printing a representation of the data point */
     std::string Generic_epsDataPoint::to_string(void) const
     {

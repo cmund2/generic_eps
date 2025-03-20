@@ -13,6 +13,8 @@ namespace Nos3
         /* Constructors */
         Generic_epsDataPoint(double count);
         Generic_epsDataPoint(int16_t spacecraft, const boost::shared_ptr<Sim42DataPoint> dp);
+        Generic_epsDataPoint(double svb_x, double svb_y, double svb_z);
+        ~Generic_epsDataPoint(void) {};
 
         /* Accessors */
         /* Provide the hardware model a way to get the specific data out of the data point */
@@ -26,7 +28,6 @@ namespace Nos3
         /* Disallow these */
         Generic_epsDataPoint(void) {};
         Generic_epsDataPoint(const Generic_epsDataPoint&) {};
-        ~Generic_epsDataPoint(void) {};
 
         /* Specific data you need to get from the data provider to the hardware model */
         /* You only get to this data through the accessors above */

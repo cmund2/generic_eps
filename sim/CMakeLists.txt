@@ -12,6 +12,7 @@ set(generic_eps_sim_src
     src/generic_eps_hardware_model.cpp
     src/generic_eps_42_data_provider.cpp
     src/generic_eps_data_provider.cpp
+    src/generic_eps_shmem_data_provider.cpp
     src/generic_eps_data_point.cpp
 )
 
