@@ -85,7 +85,8 @@ namespace Nos3
         // Additionally, the current values (as indicated) are placeholders and should
         // probably be changed to something more correct.
 
-        _power_per_panel = atof(config.get("simulator.hardware-model.physical.bus.solar-array-power-per-panel", "26.91").c_str()); //Power generated, in Watts; data taken from GTOSat
+        _power_per_main_panel = atof(config.get("simulator.hardware-model.physical.bus.solar-array-power-per-main-panel", "4.485").c_str()); //Power generated, in Watts, per main panel; data taken from GTOSat, modified to fit STF1; TODO: Replace with STF1 vals
+        _power_per_small_panel = atof(config.get("simulator.hardware-model.physical.bus.solar-array-power-per-small-panel", "1.281").c_str()); //Power generated, in Watts, for small bottom panel; data taken from GTOSat, modified to fit STF1; TODO: Replace with STF1 vals
 
         battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
@@ -102,9 +103,9 @@ namespace Nos3
         bus_mid_volt = config.get("simulator.hardware-model.physical.bus.bus-mid-voltage", "5.0");
         bus_high_volt = config.get("simulator.hardware-model.physical.bus.bus-high-voltage", "12.0");
 
-        bus_low_current = config.get("simulator.hardware-model.physical.bus.bus-low-current", "1.0");
-        bus_mid_current = config.get("simulator.hardware-model.physical.bus.bus-mid-current", "1.0");
-        bus_high_current = config.get("simulator.hardware-model.physical.bus.bus-high-current", "1.0");
+        bus_low_current = config.get("simulator.hardware-model.physical.bus.bus-low-current", "0.25");  //Adpated down from 1.0 in previous versions to be balanced with new panel size; TODO: remove comment
+        bus_mid_current = config.get("simulator.hardware-model.physical.bus.bus-mid-current", "0.15");  //Adpated down from 1.0 in previous versions to be balanced with new panel size; TODO: remove comment
+        bus_high_current = config.get("simulator.hardware-model.physical.bus.bus-high-current", "0.1"); //Adpated down from 1.0 in previous versions to be balanced with new panel size; TODO: remove comment
 
         _nominal_batt_voltage = atoi(battv.c_str());
         _max_battery = atof(batt_watt_hrs.c_str());
@@ -135,7 +136,7 @@ namespace Nos3
         /* Initialize status for each switch */
         _init_switch[0]._node_name = config.get("simulator.hardware-model.physical.switch-0.node-name", "switch-0");
         _init_switch[0]._voltage = config.get("simulator.hardware-model.physical.switch-0.voltage", "3.30");
-        _init_switch[0]._current = config.get("simulator.hardware-model.physical.switch-0.current", "0.25");
+        _init_switch[0]._current = config.get("simulator.hardware-model.physical.switch-0.current", "0.75"); //Adapted up from 0.25 in previous versions to assure discharge when in sun and sample active; TODO: remove comment
         _init_switch[0]._state = config.get("simulator.hardware-model.physical.switch-0.hex-status", "0000");
 
         _init_switch[1]._node_name = config.get("simulator.hardware-model.physical.switch-1.node-name", "switch-1");
@@ -229,6 +230,45 @@ namespace Nos3
             _enabled = GENERIC_EPS_SIM_ERROR;
             response = "Generic_epsHardwareModel::command_callback:  Disabled";
         }
+        /* Multiply percentage input here by Voltage to determine new voltage */
+        // else if (command.substr(0,16).compare("STATE_OF_CHARGE=") == 0)
+        // {
+        //     try
+        //     {
+        //         _status = std::stod(command.substr(16));
+        //         response = "SampleHardwareModel::command_callback:  State of Charge set";
+        //     }
+        //     catch (...)
+        //     {
+        //         response = "SampleHardwareModel::command_callback:  State of Charge invalid";
+        //     }            
+        // }
+        /* Add parameter which is added into the power_out in battery charge determination, to allow rapid charge or discharge*/
+        // else if (command.substr(0,15).compare("RATE_OF_CHARGE=") == 0)
+        // {
+        //     try
+        //     {
+        //         _status = std::stod(command.substr(15));
+        //         response = "SampleHardwareModel::command_callback:  Rate of Charge set";
+        //     }
+        //     catch (...)
+        //     {
+        //         response = "SampleHardwareModel::command_callback:  Rate of Charge invalid";
+        //     }            
+        // }
+        /* Set a global for that svb to 0 if disabled, 1 if enabled; Then, add that to calculations like we did IsValid to nullify charge contribution if disabled*/
+        // else if (command.substr(0,20).compare("TOGGLE_PANEL_NUMBER=") == 0)
+        // {
+        //     try
+        //     {
+        //         _status = std::stod(command.substr(20));
+        //         response = "SampleHardwareModel::command_callback: Panel toggled";
+        //     }
+        //     catch (...)
+        //     {
+        //         response = "SampleHardwareModel::command_callback:  Panel Number invalid";
+        //     }            
+        // }
         else if (command.compare("STOP") == 0) 
         {
             _keep_running = false;
@@ -483,13 +523,15 @@ namespace Nos3
     void Generic_epsHardwareModel::update_battery_values(void)
     {
         //sim_logger->debug("Generic_epsHardwareModel::update_battery_values");
-        boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());
-        double svb_X = (data_point->get_sun_vector_x() > 0) ? data_point->get_sun_vector_x() : 0.0;
-        double svb_minusX = (data_point->get_sun_vector_x() < 0) ? (-1)*data_point->get_sun_vector_x() : 0.0;
-        double svb_Y = (data_point->get_sun_vector_y() > 0) ? data_point->get_sun_vector_y() : 0.0;
-        double svb_Z = (data_point->get_sun_vector_z() > 0) ? data_point->get_sun_vector_z() : 0.0;
+        boost::shared_ptr<Generic_epsDataPoint> data_point = boost::dynamic_pointer_cast<Generic_epsDataPoint>(_generic_eps_dp->get_data_point());        
+        int8_t in_sun = (data_point->get_in_sun()) ? 1 : 0;
+        double svb_X = ((data_point->get_sun_vector_x() > 0) ? data_point->get_sun_vector_x() : 0.0) * in_sun;
+        double svb_minusX = ((data_point->get_sun_vector_x() < 0) ? (-1)*data_point->get_sun_vector_x() : 0.0) * in_sun;
+        double svb_Y = ((data_point->get_sun_vector_y() > 0) ? data_point->get_sun_vector_y() : 0.0) * in_sun;
+        double svb_minusY = ((data_point->get_sun_vector_y() < 0) ? (-1)*data_point->get_sun_vector_y() : 0.0) * in_sun;
+        double svb_minusZ = ((data_point->get_sun_vector_z() < 0) ? (-1)*data_point->get_sun_vector_z() : 0.0) * in_sun;
 
-        sim_logger->debug("Generic_epsHardwareModel::update_battery_values:  X = %.3f; Y = %.3f; Z = %.3f;", svb_X, svb_Y, svb_Z);
+        sim_logger->debug("Generic_epsHardwareModel::update_battery_values:  X = %.3f; negX = %.3f; Y = %.3f; negY = %.3f; negZ = %.3f, In_Sun: %d;", svb_X, svb_minusX, svb_Y, svb_minusY, svb_minusZ, in_sun);
 
         /* Note: Assuming solar arrays on all +/- X, Y, and Z faces */
         // The "cosine effect" is the most relevant part, affecting the power 
@@ -513,7 +555,7 @@ namespace Nos3
 
         }
         
-        double p_in = _power_per_panel*svb_X + _power_per_panel*svb_minusX + _power_per_panel*svb_Y + _power_per_panel*svb_Z;
+        double p_in = _power_per_main_panel*svb_X + _power_per_main_panel*svb_minusX + _power_per_main_panel*svb_Y + _power_per_main_panel*svb_minusY + _power_per_small_panel*svb_minusZ;
         double delta_p = (_sim_microseconds_per_tick/1000000.0 * (p_in - p_out));
         _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p/3600); //The 3600 is for converting Watt-seconds (the units of delta_p) into watt-hours
 
@@ -527,11 +569,11 @@ namespace Nos3
         _bus[0]._voltage = 1000*(batt_min_voltage + batt_diff*(_bus[0]._battery_watthrs / _max_battery));
 
 // DEBUG MESSAGES        
-//        printf("Panel sun vector is %f\n", svb_X);
-//        printf("Power from the solar panels is %f\n", p_in);
-//        printf("Total power used is %f\n", p_out);
-        printf("Battery Watt Hours are now %f\n", _bus[0]._battery_watthrs);
-        printf("Battery Voltage is now %i\n", _bus[0]._voltage);
+        // sim_logger->debug("Panel sun vector is %f\n", svb_X);
+        sim_logger->debug("Power from the solar panels is %f", p_in);
+        sim_logger->debug("Total power used is %f", p_out);
+        sim_logger->debug("Battery Watt Hours are now %f", _bus[0]._battery_watthrs);
+        sim_logger->debug("Battery Voltage is now %i", _bus[0]._voltage);
         
     }
 

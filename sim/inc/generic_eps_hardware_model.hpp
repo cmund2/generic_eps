@@ -92,7 +92,8 @@ namespace Nos3
         std::uint8_t                                        _enabled;
         std::uint8_t                                        _initialized_other_sims;
 
-        double                                              _power_per_panel;
+        double                                              _power_per_main_panel;
+        double                                              _power_per_small_panel;
         double                                              _max_battery;
         double                                              _nominal_batt_voltage;
     };
