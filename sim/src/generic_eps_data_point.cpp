@@ -18,7 +18,8 @@ namespace Nos3
         _sun_vector[2] = count * 0.003;
     }
 
-    Generic_epsDataPoint::Generic_epsDataPoint(int16_t spacecraft, const boost::shared_ptr<Sim42DataPoint> dp) : _dp(*dp), _sc(spacecraft), _not_parsed(true)
+    Generic_epsDataPoint::Generic_epsDataPoint(int16_t orbit, int16_t spacecraft, const boost::shared_ptr<Sim42DataPoint> dp) : 
+        _dp(*dp), _orb(orbit), _sc(spacecraft), _not_parsed(true)
     {
         sim_logger->trace("Generic_epsDataPoint::Generic_epsDataPoint:  42 Constructor executed");
 
@@ -38,26 +39,41 @@ namespace Nos3
             ** 42 variables defined in `42/Include/42types.h`
             ** 42 data stream defined in `42/Source/IPC/SimWriteToSocket.c`
             */
-           std::string svb_key, eci_pos_key, qbn_key;
+           std::string svb_key, pos_r_key, pos_n_key, qbn_key;
            svb_key.append("SC[").append(std::to_string(_sc)).append("].svb");
-           eci_pos_key.append("SC[").append(std::to_string(_sc)).append("].PosR");
+           pos_r_key.append("SC[").append(std::to_string(_sc)).append("].PosR");
+           pos_n_key.append("Orb[").append(std::to_string(_orb)).append("].PosN");
            qbn_key.append("SC[").append(std::to_string(_sc)).append("].B[0].qn");
 
            /* Parse 42 telemetry */
            std::string svb_values = _dp.get_value_for_key(svb_key);
-           std::string eci_pos_values = _dp.get_value_for_key(eci_pos_key);
+           std::string pos_r_values = _dp.get_value_for_key(pos_r_key);
+           std::string pos_n_values = _dp.get_value_for_key(pos_n_key);
            std::string qbn_values = _dp.get_value_for_key(qbn_key);
 
+           sim_logger->debug("PosN: %s", pos_n_values.c_str());
+
            std::vector<double> svb_data;
-           std::vector<double> eci_pos_data;
+           std::vector<double> pos_r_data;
+           std::vector<double> pos_n_data;
+           std::vector<double> pos;
            std::vector<double> qbn_data;
 
+        //    sim_logger->debug("Generic_epsDataPoint::Generic_epsDataPoint: PosN: %s.", pos_n_values.c_str());
+
            svb_data.resize(3);
-           eci_pos_data.resize(3);
+           pos_r_data.resize(3);
+           pos_n_data.resize(3);
+           pos.resize(3);
            qbn_data.resize(3);
 
            parse_double_vector(svb_values, svb_data);
-           parse_double_vector(eci_pos_values, eci_pos_data);
+           parse_double_vector(pos_r_values, pos_r_data);
+           parse_double_vector(pos_n_values, pos_n_data);
+           for( int i = 0; i < 3; i++ )
+           {
+            pos[i] = pos_n_data[i] + pos_r_data[i];
+           }
            parse_double_vector(qbn_values, qbn_data);
             
            if( svb_data.size() == 0 )
@@ -70,7 +86,7 @@ namespace Nos3
            _sun_vector[1] = svb_data[1];
            _sun_vector[2] = svb_data[2];
 
-           if( eci_pos_data.size() == 0 || qbn_data.size() == 0 )
+           if( pos_r_data.size() == 0 || pos_n_data.size() == 0 || qbn_values.size() == 0 )
            {
               sim_logger->trace("Generic_epsDataPoint::Generic_epsDataPoint: No Pos or QBN Data for Eclipse Calc, continue.");
               return;
@@ -83,8 +99,8 @@ namespace Nos3
            
            SimCoordinateTransformations::Q2C( qbn_data, cbn );
            SimCoordinateTransformations::MTxV( cbn, svb_data, svn );
-           rmag = SimCoordinateTransformations::norm( eci_pos_data );
-           SimCoordinateTransformations::SxV( (-1.0/rmag), eci_pos_data, r);
+           rmag = SimCoordinateTransformations::norm( pos );
+           SimCoordinateTransformations::SxV( (-1.0/rmag), pos, r );
 
            double theta = acos( SimCoordinateTransformations::dot( r, svn ) );
 
