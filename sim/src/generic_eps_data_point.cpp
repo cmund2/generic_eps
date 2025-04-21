@@ -51,15 +51,11 @@ namespace Nos3
            std::string pos_n_values = _dp.get_value_for_key(pos_n_key);
            std::string qbn_values = _dp.get_value_for_key(qbn_key);
 
-           sim_logger->debug("PosN: %s", pos_n_values.c_str());
-
            std::vector<double> svb_data;
            std::vector<double> pos_r_data;
            std::vector<double> pos_n_data;
            std::vector<double> pos;
            std::vector<double> qbn_data;
-
-        //    sim_logger->debug("Generic_epsDataPoint::Generic_epsDataPoint: PosN: %s.", pos_n_values.c_str());
 
            svb_data.resize(3);
            pos_r_data.resize(3);

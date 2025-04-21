@@ -182,6 +182,13 @@ namespace Nos3
             _switch[i]._status = std::stoi((_init_switch[i]._state).c_str(), 0, 16);
         }
 
+        _charge_rate_modifer = 0;
+        _posX_Panel_Inhibit = 1;
+        _negX_Panel_Inhibit = 1;
+        _posY_Panel_Inhibit = 1;
+        _negY_Panel_Inhibit = 1;
+        _negZ_Panel_Inhibit = 1;
+
         sim_logger->info("    _switch[0]._voltage = %d", _switch[0]._voltage);
         sim_logger->info("    _switch[0]._current = %d", _switch[0]._current);
         sim_logger->info("    _switch[0]._status = 0x%04x", _switch[0]._status);
@@ -231,44 +238,93 @@ namespace Nos3
             response = "Generic_epsHardwareModel::command_callback:  Disabled";
         }
         /* Multiply percentage input here by Voltage to determine new voltage */
-        // else if (command.substr(0,16).compare("STATE_OF_CHARGE=") == 0)
-        // {
-        //     try
-        //     {
-        //         _status = std::stod(command.substr(16));
-        //         response = "SampleHardwareModel::command_callback:  State of Charge set";
-        //     }
-        //     catch (...)
-        //     {
-        //         response = "SampleHardwareModel::command_callback:  State of Charge invalid";
-        //     }            
-        // }
+        else if (command.substr(0,16).compare("STATE_OF_CHARGE=") == 0)
+        {
+            try
+            {
+                _bus[0]._voltage = (std::stod(command.substr(16))/100) * _max_battery; //Take your number (between 1 and 100) and turn the percent to its decimal form, then multiply by your maximum voltage, and set the current voltage to that
+                //TODO: Add code to also modify watt hours? Or make global and do so in battery update
+                response = "SampleHardwareModel::command_callback:  State of Charge set";
+            }
+            catch (...)
+            {
+                response = "SampleHardwareModel::command_callback:  State of Charge invalid";
+            }            
+        }
         /* Add parameter which is added into the power_out in battery charge determination, to allow rapid charge or discharge*/
-        // else if (command.substr(0,15).compare("RATE_OF_CHARGE=") == 0)
-        // {
-        //     try
-        //     {
-        //         _status = std::stod(command.substr(15));
-        //         response = "SampleHardwareModel::command_callback:  Rate of Charge set";
-        //     }
-        //     catch (...)
-        //     {
-        //         response = "SampleHardwareModel::command_callback:  Rate of Charge invalid";
-        //     }            
-        // }
+        else if (command.substr(0,15).compare("RATE_OF_CHARGE=") == 0)
+        {
+            try
+            {
+                _charge_rate_modifer = std::stod(command.substr(15));
+                response = "SampleHardwareModel::command_callback:  Rate of Charge set";
+            }
+            catch (...)
+            {
+                response = "SampleHardwareModel::command_callback:  Rate of Charge invalid";
+            }            
+        }
         /* Set a global for that svb to 0 if disabled, 1 if enabled; Then, add that to calculations like we did IsValid to nullify charge contribution if disabled*/
-        // else if (command.substr(0,20).compare("TOGGLE_PANEL_NUMBER=") == 0)
-        // {
-        //     try
-        //     {
-        //         _status = std::stod(command.substr(20));
-        //         response = "SampleHardwareModel::command_callback: Panel toggled";
-        //     }
-        //     catch (...)
-        //     {
-        //         response = "SampleHardwareModel::command_callback:  Panel Number invalid";
-        //     }            
-        // }
+        else if (command.substr(0,18).compare("TOGGLE_POSX_PANEL=") == 0)
+        {
+            try
+            {
+                _posX_Panel_Inhibit = std::stod(command.substr(18));
+                response = "SampleHardwareModel::command_callback: PosX Panel toggled";
+            }
+            catch (...)
+            {
+                response = "SampleHardwareModel::command_callback:  PosX Panel state invalid";
+            }            
+        }
+        else if (command.substr(0,18).compare("TOGGLE_NEGX_PANEL=") == 0)
+        {
+            try
+            {
+                _negX_Panel_Inhibit = std::stod(command.substr(18));
+                response = "SampleHardwareModel::command_callback: NegX Panel toggled";
+            }
+            catch (...)
+            {
+                response = "SampleHardwareModel::command_callback: NegX Panel state invalid";
+            }            
+        }
+        else if (command.substr(0,18).compare("TOGGLE_POSY_PANEL=") == 0)
+        {
+            try
+            {
+                _posY_Panel_Inhibit = std::stod(command.substr(18));
+                response = "SampleHardwareModel::command_callback: PosY Panel toggled";
+            }
+            catch (...)
+            {
+                response = "SampleHardwareModel::command_callback: PosY Panel state invalid";
+            }            
+        }
+        else if (command.substr(0,18).compare("TOGGLE_NEGY_PANEL=") == 0)
+        {
+            try
+            {
+                _negY_Panel_Inhibit = std::stod(command.substr(18));
+                response = "SampleHardwareModel::command_callback: NegY Panel toggled";
+            }
+            catch (...)
+            {
+                response = "SampleHardwareModel::command_callback: NegY Panel state invalid";
+            }            
+        }
+        else if (command.substr(0,18).compare("TOGGLE_NEGZ_PANEL=") == 0)
+        {
+            try
+            {
+                _negZ_Panel_Inhibit = std::stod(command.substr(18));
+                response = "SampleHardwareModel::command_callback: NegZ Panel toggled";
+            }
+            catch (...)
+            {
+                response = "SampleHardwareModel::command_callback: NegZ Panel state invalid";
+            }            
+        }
         else if (command.compare("STOP") == 0) 
         {
             _keep_running = false;
@@ -555,8 +611,8 @@ namespace Nos3
 
         }
         
-        double p_in = _power_per_main_panel*svb_X + _power_per_main_panel*svb_minusX + _power_per_main_panel*svb_Y + _power_per_main_panel*svb_minusY + _power_per_small_panel*svb_minusZ;
-        double delta_p = (_sim_microseconds_per_tick/1000000.0 * (p_in - p_out));
+        double p_in = ((_power_per_main_panel*svb_X)*_posX_Panel_Inhibit) + ((_power_per_main_panel*svb_minusX)*_negX_Panel_Inhibit) + ((_power_per_main_panel*svb_Y)*_posY_Panel_Inhibit) + ((_power_per_main_panel*svb_minusY)*_negY_Panel_Inhibit) + ((_power_per_small_panel*svb_minusZ)*_negZ_Panel_Inhibit);
+        double delta_p = (_sim_microseconds_per_tick/1000000.0 * ((p_in - p_out) + _charge_rate_modifer));
         _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p/3600); //The 3600 is for converting Watt-seconds (the units of delta_p) into watt-hours
 
         // Here is the code to increase or decrease the value of the battery 

@@ -96,6 +96,13 @@ namespace Nos3
         double                                              _power_per_small_panel;
         double                                              _max_battery;
         double                                              _nominal_batt_voltage;
+
+        double                                              _charge_rate_modifer;
+        int8_t                                              _posX_Panel_Inhibit;
+        int8_t                                              _negX_Panel_Inhibit;
+        int8_t                                              _posY_Panel_Inhibit;
+        int8_t                                              _negY_Panel_Inhibit;
+        int8_t                                              _negZ_Panel_Inhibit;
     };
 
     class I2CSlaveConnection : public NosEngine::I2C::I2CSlave
@@ -109,6 +116,7 @@ namespace Nos3
         std::uint8_t _i2c_read_valid;
         std::vector<uint8_t> _i2c_out_data;
     };
+
 }
 
 #endif
