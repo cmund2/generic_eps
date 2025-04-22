@@ -330,6 +330,10 @@ namespace Nos3
             _keep_running = false;
             response = "Generic_epsHardwareModel::command_callback:  Stopping";
         }
+        else
+        {
+            response = "Generic_epsHardwareModel::command_callback:  Unrecognized Command!";
+        }
 
         /* Send a reply */
         sim_logger->info("Generic_epsHardwareModel::command_callback:  Sending reply: %s.", response.c_str());
