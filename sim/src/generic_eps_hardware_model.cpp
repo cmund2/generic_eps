@@ -242,8 +242,17 @@ namespace Nos3
         {
             try
             {
-                _bus[0]._voltage = (std::stod(command.substr(16))/100) * _max_battery; //Take your number (between 1 and 100) and turn the percent to its decimal form, then multiply by your maximum voltage, and set the current voltage to that
-                //TODO: Add code to also modify watt hours? Or make global and do so in battery update
+                _bus[0]._battery_watthrs = (std::stod(command.substr(16))/100) * _max_battery;
+
+                // Here is the code to increase or decrease the value of the battery 
+                // voltage. It is linear and +- 5% of the nominal voltage, which is
+                // a value I came across when doing some research.
+
+                double batt_min_voltage = 0.95*_nominal_batt_voltage;
+                double batt_diff = 0.1*_nominal_batt_voltage;
+
+                _bus[0]._voltage = 1000*(batt_min_voltage + batt_diff*(_bus[0]._battery_watthrs / _max_battery));
+
                 response = "SampleHardwareModel::command_callback:  State of Charge set";
             }
             catch (...)
