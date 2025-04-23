@@ -88,7 +88,7 @@ namespace Nos3
         _power_per_main_panel = atof(config.get("simulator.hardware-model.physical.bus.solar-array-power-per-main-panel", "4.485").c_str()); //Power generated, in Watts, per main panel; data taken from GTOSat, modified to fit STF1; TODO: Replace with STF1 vals
         _power_per_small_panel = atof(config.get("simulator.hardware-model.physical.bus.solar-array-power-per-small-panel", "1.281").c_str()); //Power generated, in Watts, for small bottom panel; data taken from GTOSat, modified to fit STF1; TODO: Replace with STF1 vals
 
-        battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.0");
+        battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.00");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
         batt_watt_hrs = config.get("simulator.hardware-model.physical.bus.battery-watt-hrs", "10.0");
         solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
@@ -188,6 +188,8 @@ namespace Nos3
         _posY_Panel_Inhibit = 1;
         _negY_Panel_Inhibit = 1;
         _negZ_Panel_Inhibit = 1;
+
+        _solar_array_inhibit = 1;
 
         sim_logger->info("    _switch[0]._voltage = %d", _switch[0]._voltage);
         sim_logger->info("    _switch[0]._current = %d", _switch[0]._current);
@@ -623,8 +625,20 @@ namespace Nos3
             p_out = p_out + (_switch[i]._voltage/1000.0)*(_switch[i]._current/1000.0)*switchonoff;
 
         }
+
+        // Inhibit Solar Panel charging battery if at or above max suggested charge; reenable charging at 99% charge.
+
+        if ( _bus[0]._battery_watthrs >= _max_battery ) 
+        {
+            _solar_array_inhibit = 0;
+        }
+        if ( _bus[0]._battery_watthrs <= ( 0.99 * _max_battery ) )
+        {
+            _solar_array_inhibit = 1;
+        }
         
-        double p_in = ((_power_per_main_panel*svb_X)*_posX_Panel_Inhibit) + ((_power_per_main_panel*svb_minusX)*_negX_Panel_Inhibit) + ((_power_per_main_panel*svb_Y)*_posY_Panel_Inhibit) + ((_power_per_main_panel*svb_minusY)*_negY_Panel_Inhibit) + ((_power_per_small_panel*svb_minusZ)*_negZ_Panel_Inhibit);
+        double p_in = (((_power_per_main_panel*svb_X)*_posX_Panel_Inhibit) + ((_power_per_main_panel*svb_minusX)*_negX_Panel_Inhibit) + ((_power_per_main_panel*svb_Y)*_posY_Panel_Inhibit) + ((_power_per_main_panel*svb_minusY)*_negY_Panel_Inhibit) + ((_power_per_small_panel*svb_minusZ)*_negZ_Panel_Inhibit)) * _solar_array_inhibit;
+        
         double delta_p = (_sim_microseconds_per_tick/1000000.0 * ((p_in - p_out) + _charge_rate_modifer));
         _bus[0]._battery_watthrs = _bus[0]._battery_watthrs + (delta_p/3600); //The 3600 is for converting Watt-seconds (the units of delta_p) into watt-hours
 
@@ -639,6 +653,7 @@ namespace Nos3
 
 // DEBUG MESSAGES        
         // sim_logger->debug("Panel sun vector is %f\n", svb_X);
+        sim_logger->debug("Solar Array Connected? %d", _solar_array_inhibit);
         sim_logger->debug("Power from the solar panels is %f", p_in);
         sim_logger->debug("Total power used is %f", p_out);
         sim_logger->debug("Battery Watt Hours are now %f", _bus[0]._battery_watthrs);

@@ -97,12 +97,14 @@ namespace Nos3
         double                                              _max_battery;
         double                                              _nominal_batt_voltage;
 
+        uint8_t                                              _solar_array_inhibit;
+
         double                                              _charge_rate_modifer;
-        int8_t                                              _posX_Panel_Inhibit;
-        int8_t                                              _negX_Panel_Inhibit;
-        int8_t                                              _posY_Panel_Inhibit;
-        int8_t                                              _negY_Panel_Inhibit;
-        int8_t                                              _negZ_Panel_Inhibit;
+        uint8_t                                              _posX_Panel_Inhibit;
+        uint8_t                                              _negX_Panel_Inhibit;
+        uint8_t                                              _posY_Panel_Inhibit;
+        uint8_t                                              _negY_Panel_Inhibit;
+        uint8_t                                              _negZ_Panel_Inhibit;
     };
 
     class I2CSlaveConnection : public NosEngine::I2C::I2CSlave
