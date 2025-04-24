@@ -13,8 +13,9 @@ namespace Nos3
         connect_reader_thread_as_42_socket_client(
             config.get("simulator.hardware-model.data-provider.hostname", "localhost"),
             config.get("simulator.hardware-model.data-provider.port", 4242) );
-
-        _sc = config.get("simulator.hardware-model.data-provider.spacecraft", 0);
+        
+        _orb = config.get("simulator.hardware-model.data-provider.orbit", 0);
+        _sc  = config.get("simulator.hardware-model.data-provider.spacecraft", 0);
     }
 
     boost::shared_ptr<SimIDataPoint> Generic_eps42DataProvider::get_data_point(void) const
@@ -25,7 +26,7 @@ namespace Nos3
         const boost::shared_ptr<Sim42DataPoint> dp42 = boost::dynamic_pointer_cast<Sim42DataPoint>(SimData42SocketProvider::get_data_point());
 
         /* Prepare the specific data */
-        SimIDataPoint *dp = new Generic_epsDataPoint(_sc, dp42);
+        SimIDataPoint *dp = new Generic_epsDataPoint(_orb, _sc, dp42);
 
         return boost::shared_ptr<SimIDataPoint>(dp);
     }

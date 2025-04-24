@@ -22,7 +22,7 @@ namespace Nos3
         /* Disallow these */
         ~Generic_eps42DataProvider(void) {};
         Generic_eps42DataProvider& operator=(const Generic_eps42DataProvider&) {return *this;};
-
+        int16_t _orb; // Which orbit number to parse out of 42 data
         int16_t _sc;  /* Which spacecraft number to parse out of 42 data */
     };
 }

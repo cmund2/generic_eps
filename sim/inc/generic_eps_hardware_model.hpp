@@ -92,9 +92,19 @@ namespace Nos3
         std::uint8_t                                        _enabled;
         std::uint8_t                                        _initialized_other_sims;
 
-        double                                              _power_per_panel;
+        double                                              _power_per_main_panel;
+        double                                              _power_per_small_panel;
         double                                              _max_battery;
         double                                              _nominal_batt_voltage;
+
+        uint8_t                                              _solar_array_inhibit;
+
+        double                                              _charge_rate_modifer;
+        uint8_t                                              _posX_Panel_Inhibit;
+        uint8_t                                              _negX_Panel_Inhibit;
+        uint8_t                                              _posY_Panel_Inhibit;
+        uint8_t                                              _negY_Panel_Inhibit;
+        uint8_t                                              _negZ_Panel_Inhibit;
     };
 
     class I2CSlaveConnection : public NosEngine::I2C::I2CSlave
@@ -108,6 +118,7 @@ namespace Nos3
         std::uint8_t _i2c_read_valid;
         std::vector<uint8_t> _i2c_out_data;
     };
+
 }
 
 #endif
