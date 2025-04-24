@@ -632,7 +632,7 @@ namespace Nos3
         {
             _solar_array_inhibit = 0;
         }
-        if ( _bus[0]._battery_watthrs <= ( 0.99 * _max_battery ) )
+        if ( _bus[0]._battery_watthrs <= ( 0.99999 * _max_battery ) )
         {
             _solar_array_inhibit = 1;
         }
