@@ -78,7 +78,7 @@ namespace Nos3
         sim_logger->info("Generic_epsHardwareModel::Generic_epsHardwareModel:  Now on time bus named %s.", _command_bus_name.c_str());
 
         /* Initialize status for battery and solar panels */
-        std::string battv, battv_temp, solararray, solararray_current, solararray_temp, batt_watt_hrs, always_on_v, always_on_a;
+        std::string battv, battv_temp, solararray, solararray_current, solararray_temp, batt_watt_hrs, batt_charge_state, always_on_v, always_on_a;
 
         // Below, the battery watt-hrs variable arbitrarily selected - it could well 
         // do to be changed to be more in line with true spacecraft values.
@@ -91,6 +91,7 @@ namespace Nos3
         battv = config.get("simulator.hardware-model.physical.bus.battery-voltage", "24.00");
         battv_temp = config.get("simulator.hardware-model.physical.bus.battery-temperature", "25.0");
         batt_watt_hrs = config.get("simulator.hardware-model.physical.bus.battery-watt-hrs", "10.0");
+        batt_charge_state = config.get("simulator.hardware-model.physical.bus.battery-charge-state", "1");
         solararray = config.get("simulator.hardware-model.physical.bus.solar-array-voltage", "32.0");
         solararray_temp = config.get("simulator.hardware-model.physical.bus.solar-array-temperature", "80.0");
         solararray_current = config.get("simulator.hardware-model.physical.bus.solar-array-current", "4.0");
@@ -112,7 +113,7 @@ namespace Nos3
         
         _bus[0]._voltage = atoi(battv.c_str()) * 1000;
         _bus[0]._temperature = (atoi(battv_temp.c_str()) + 60) * 100;
-        _bus[0]._battery_watthrs = atof(batt_watt_hrs.c_str());
+        _bus[0]._battery_watthrs = atof(batt_watt_hrs.c_str()) * atof(batt_charge_state.c_str());
         _bus[1]._voltage = atof(bus_low_volt.c_str()) * 1000;
         _bus[2]._voltage = atof(bus_mid_volt.c_str()) * 1000;
         _bus[3]._voltage = atof(bus_high_volt.c_str()) * 1000;
