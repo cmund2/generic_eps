@@ -43,7 +43,7 @@ namespace Nos3
            svb_key.append("SC[").append(std::to_string(_sc)).append("].svb");
            pos_r_key.append("SC[").append(std::to_string(_sc)).append("].PosR");
            pos_n_key.append("Orb[").append(std::to_string(_orb)).append("].PosN");
-           qbn_key.append("SC[").append(std::to_string(_sc)).append("].B[0].qn");
+           qbn_key.append("SC[").append(std::to_string(_sc)).append("].qn");
 
            /* Parse 42 telemetry */
            std::string svb_values = _dp.get_value_for_key(svb_key);
