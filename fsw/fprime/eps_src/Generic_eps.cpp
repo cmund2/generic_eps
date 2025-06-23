@@ -142,10 +142,11 @@ namespace Components {
     }
 
     Update_Counters();
+    // sleep(1);
     Update_Base_Tlm();
-    sleep(1);
+    // sleep(1);
     Update_SW_Tlm();
-    sleep(1); // ensure all telemetry goes thru
+    // sleep(1); // ensure all telemetry goes thru
 
     // Tell the fprime command system that we have completed the processing of the supplied command with OK status
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
@@ -157,6 +158,8 @@ namespace Components {
     this->tlmWrite_DeviceErrorCount(HkTelemetryPkt.DeviceErrorCount);
     this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
     this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
+
+    sleep(1);
     
   }
 
@@ -171,6 +174,8 @@ namespace Components {
     this->tlmWrite_SolarArrayVoltage(Generic_epsHK.SolarArrayVoltage / 1000.0);
     this->tlmWrite_SolarArrayTemperature(Generic_epsHK.SolarArrayTemperature / 1000.0);
     
+    sleep(1);
+
     this->tlmWrite_RawBatteryVoltage(Generic_epsHK.BatteryVoltage);
     this->tlmWrite_RawBatteryTemperature(Generic_epsHK.BatteryTemperature);
     this->tlmWrite_RawBus3p3V(Generic_epsHK.Bus3p3Voltage);
@@ -184,19 +189,23 @@ namespace Components {
 
   void Generic_eps :: Update_SW_Tlm() {
 
+    sleep(1);
+
     this->tlmWrite_RawSW0Voltage(Generic_epsHK.Switch[0].Voltage);
     this->tlmWrite_RawSW0Current(Generic_epsHK.Switch[0].Current);
     this->tlmWrite_SW0Voltage(Generic_epsHK.Switch[0].Voltage / 1000.0);
     this->tlmWrite_SW0Current(Generic_epsHK.Switch[0].Current / 1000.0);
     this->tlmWrite_SW0State(get_switch_state(Generic_epsHK.Switch[0].Status));
     this->tlmWrite_SW0Flag(get_switch_flag(Generic_epsHK.Switch[0].Status));
-
+    
     this->tlmWrite_RawSW1Voltage(Generic_epsHK.Switch[1].Voltage);
     this->tlmWrite_RawSW1Current(Generic_epsHK.Switch[1].Current);
     this->tlmWrite_SW1Voltage(Generic_epsHK.Switch[1].Voltage / 1000.0);
     this->tlmWrite_SW1Current(Generic_epsHK.Switch[1].Current / 1000.0);
     this->tlmWrite_SW1State(get_switch_state(Generic_epsHK.Switch[1].Status));
     this->tlmWrite_SW1Flag(get_switch_flag(Generic_epsHK.Switch[1].Status));
+
+    sleep(1);
 
     this->tlmWrite_RawSW2Voltage(Generic_epsHK.Switch[2].Voltage);
     this->tlmWrite_RawSW2Current(Generic_epsHK.Switch[2].Current);
@@ -212,6 +221,8 @@ namespace Components {
     this->tlmWrite_SW3State(get_switch_state(Generic_epsHK.Switch[3].Status));
     this->tlmWrite_SW3Flag(get_switch_flag(Generic_epsHK.Switch[3].Status));
 
+    sleep(1);
+
     this->tlmWrite_RawSW4Voltage(Generic_epsHK.Switch[4].Voltage);
     this->tlmWrite_RawSW4Current(Generic_epsHK.Switch[4].Current);
     this->tlmWrite_SW4Voltage(Generic_epsHK.Switch[4].Voltage / 1000.0);
@@ -225,6 +236,8 @@ namespace Components {
     this->tlmWrite_SW5Current(Generic_epsHK.Switch[5].Current / 1000.0);
     this->tlmWrite_SW5State(get_switch_state(Generic_epsHK.Switch[5].Status));
     this->tlmWrite_SW5Flag(get_switch_flag(Generic_epsHK.Switch[5].Status));
+
+    sleep(1);
     
     this->tlmWrite_RawSW6Voltage(Generic_epsHK.Switch[6].Voltage);
     this->tlmWrite_RawSW6Current(Generic_epsHK.Switch[6].Current);
@@ -232,7 +245,6 @@ namespace Components {
     this->tlmWrite_SW6Current(Generic_epsHK.Switch[6].Current / 1000.0);
     this->tlmWrite_SW6State(get_switch_state(Generic_epsHK.Switch[6].Status));
     this->tlmWrite_SW6Flag(get_switch_flag(Generic_epsHK.Switch[6].Status));
-    sleep(1);
     
     this->tlmWrite_RawSW7Voltage(Generic_epsHK.Switch[7].Voltage);
     this->tlmWrite_RawSW7Current(Generic_epsHK.Switch[7].Current);
