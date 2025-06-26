@@ -219,6 +219,39 @@ void Test_GENERIC_EPS_VerifyCmdLength(void)
     UtAssert_True(EventTest.MatchCount > 0, "LEN_ERR on incorrect size");
 }
 
+//
+
+/*--------------------------------------------------------------------
+ * TDAC Tests
+ *-------------------------------------------------------------------*/
+
+// Verify that when the battery's charge falls below 20%, the EPS disables all power switches and outputs a "LOW POWER" event
+void Test_GENERIC_EPS_LowPowerThreshold(void)
+{
+    UT_CheckEvent_t EventTest;
+
+    /* 1) Stub out the device housekeeping read to succeed */
+    UT_SetDeferredRetcode(UT_KEY(GENERIC_EPS_RequestHK), 1, OS_SUCCESS);
+
+    /* 2) Force the HK packet’s StateOfCharge below threshold */
+    GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.StateOfCharge = 15; /* e.g. 15% */
+
+    /* 3) Attach a hook to catch the low-power event */
+    UT_CheckEvent_Setup(&EventTest,
+                        GENERIC_EPS_LOW_POWER_EID,  /* your #define in generic_eps_events.h */
+                        NULL                         /* no format string check */);
+
+    /* 4) Run the function under test */
+    GENERIC_EPS_ReportHousekeeping();
+
+    /* 5) Verify the low-power event fired at least once */
+    UtAssert_True(EventTest.MatchCount > 0,
+                  "Low-power event generated (%u)",
+                  (unsigned int)EventTest.MatchCount);
+}
+
+
+
 /*--------------------------------------------------------------------
  * UT registration
  *-------------------------------------------------------------------*/
@@ -233,4 +266,7 @@ void UtTest_Setup(void)
     ADD_TEST(GENERIC_EPS_ProcessGroundCommand);
     ADD_TEST(GENERIC_EPS_ReportHousekeeping);
     ADD_TEST(GENERIC_EPS_VerifyCmdLength);
+
+    // My tests
+    ADD_TEST(GENERIC_EPS_LowPowerThreshold);
 }
