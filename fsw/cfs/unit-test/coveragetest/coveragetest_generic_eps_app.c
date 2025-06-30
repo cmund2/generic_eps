@@ -48,7 +48,7 @@ static void UT_CheckEvent_Setup(UT_CheckEvent_t *Evt, uint16 ExpectedEvent, cons
 }
 
 /*--------------------------------------------------------------------
- * Unit Tests for EPS for TDAC Intern Project
+ * Unit Tests for EPS App for TDAC Intern Project
  *-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
