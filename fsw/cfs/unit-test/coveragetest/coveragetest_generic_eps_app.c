@@ -242,6 +242,45 @@ void Test_GENERIC_EPS_TelemetryRequest_MismatchedCode(void)
     UtAssert_True(evt.MatchCount == 1, "GENERIC_EPS_DEVICE_TLM_ERR_EID should fire on mismatched HK request code");
 }
 
+// TEST 1: This tests that a command to turn on switch 7 goes through (even if it was a mistake)
+void Test_GENERIC_EPS_ProcessGroundCommand_Switch7On(void)
+{
+    UT_CheckEvent_t evt;
+    CFE_SB_MsgId_t    cmdMid = CFE_SB_ValueToMsgId(GENERIC_EPS_CMD_MID);
+    CFE_MSG_FcnCode_t switchCc = GENERIC_EPS_SWITCH_CC;
+    size_t            expectedLen = sizeof(GENERIC_EPS_Switch_cmd_t);
+    GENERIC_EPS_Switch_cmd_t pkt;
+
+    //Build a “Switch 7 → ON (0xAA)” packet in local buffer
+    pkt.CmdHeader.MsgId  = GENERIC_EPS_CMD_MID;
+    pkt.CmdHeader.FcnCode = GENERIC_EPS_SWITCH_CC;
+    pkt.SwitchNumber      = 7;
+    pkt.State             = 0xAA;
+
+    // Stubs
+    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId),
+                     &cmdMid, sizeof(cmdMid), false);
+    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode),
+                     &switchCc, sizeof(switchCc), false);
+    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetSize),
+                     &expectedLen, sizeof(expectedLen), false);
+
+    // Look that the switch command was recieved
+    UT_CheckEvent_Setup(&evt, GENERIC_EPS_CMD_SWITCH_INF_EID,
+                        "GENERIC_EPS: Switch command received");
+
+    GENERIC_EPS_ProcessGroundCommand();
+
+    // Verify one switch event occured
+    UtAssert_True(evt.MatchCount == 1,
+                  "CFE_EVS_SendEvent(EPS_CMD_SWITCH_INF_EID) called once");
+
+    /* Now—since we never actually touched the device, we can only verify
+       that the HK‐telemetry counter was incremented and the switch‐count */
+    UtAssert_True(GENERIC_EPS_AppData.HkTelemetryPkt.DeviceHK.Switch[7].Status == 0xAA,
+                  "DeviceHK.Switch[7].Status == 0xAA");
+}
+
 
 /*--------------------------------------------------------------------
  * UT registration
