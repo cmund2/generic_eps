@@ -7,6 +7,12 @@
 
 #include "generic_eps_app_coveragetest_common.h"  /* Brings in UT_ASSERT, UT_KEY, stubs, etc */
 
+#undef ADD_TEST
+#define ADD_TEST(test) \
+    UtTest_Add((Test_##test), \
+               Generic_eps_DeviceUT_Setup, \
+               Generic_eps_DeviceUT_TearDown, \
+               #test)
 /*--------------------------------------------------------------------
  * Unit Tests for EPS for TDAC Intern Project
  *-------------------------------------------------------------------*/
@@ -41,12 +47,12 @@ void Test_GENERIC_EPS_RequestHK_I2CError(void)
 /*
  * Setup / Teardown called before / after every test
  */
-void Generic_eps_DeviceUT_Setup(void)
+void Generic_eps_UT_Setup(void)
 {
     UT_ResetState(0);
 }
 
-void Generic_eps_DeviceUT_TearDown(void)
+void Generic_eps_UT_TearDown(void)
 {
     /* nothing to clean up */
 }
