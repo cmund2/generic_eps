@@ -249,8 +249,9 @@ void Test_GENERIC_EPS_TelemetryRequest_MismatchedCode(void)
     size_t sz = sizeof(GENERIC_EPS_NoArgs_cmd_t);
 
     // Stub all three calls
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId),&reqId, sizeof(reqId), false);
-    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode),&fcode, sizeof(fcode), false);
+    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &reqId, sizeof(reqId), false);
+    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &reqId, sizeof(reqId), false);
+    UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &fcode, sizeof(fcode), false);
     UT_SetDataBuffer(UT_KEY(CFE_MSG_GetSize), &sz, sizeof(sz), false);
 
     // Look for a telemetry request error
@@ -264,7 +265,7 @@ void Test_GENERIC_EPS_TelemetryRequest_MismatchedCode(void)
 }
 
 // TEST 1: This tests that a command to turn on switch 7 goes through (even if it was a mistake)
-vvoid Test_GENERIC_EPS_ProcessGroundCommand_Switch7On(void)
+void Test_GENERIC_EPS_ProcessGroundCommand_Switch7On(void)
 {
     UT_CheckEvent_t         evt;
     GENERIC_EPS_Switch_cmd_t pkt;
@@ -281,7 +282,7 @@ vvoid Test_GENERIC_EPS_ProcessGroundCommand_Switch7On(void)
     GENERIC_EPS_AppData.MsgPtr = (CFE_MSG_Message_t *)&pkt;
 
     // Stub out the CFE “getters” so that the code under test sees
-          the right MID, CC and size.  Note: GetMsgId is called twice internally. */
+    // the right MID, CC and size.  Note: GetMsgId is called twice internally. */
     UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &msgId, sizeof(msgId), false);
     UT_SetDataBuffer(UT_KEY(CFE_MSG_GetMsgId), &msgId, sizeof(msgId), false);
     UT_SetDataBuffer(UT_KEY(CFE_MSG_GetFcnCode), &fcode, sizeof(fcode), false);
