@@ -243,7 +243,7 @@ void Test_GENERIC_EPS_TelemetryRequest_MismatchedCode(void)
     CFE_SB_MsgId_t reqId = CFE_SB_ValueToMsgId(GENERIC_EPS_REQ_HK_MID);
 
     // Set a valid FID
-    CFE_MSG_FcnCode_t Fcode = GENERIC_EPS_RESET_COUNTERS_CC;
+    CFE_MSG_FcnCode_t fcode = GENERIC_EPS_RESET_COUNTERS_CC;
 
     // Set a valid packet length
     size_t sz = sizeof(GENERIC_EPS_NoArgs_cmd_t);
