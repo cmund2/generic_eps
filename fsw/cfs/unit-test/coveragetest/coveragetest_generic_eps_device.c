@@ -56,10 +56,5 @@ void Generic_eps_DeviceUT_TearDown(void)
  */
 void UtTest_Setup(void)
 {
-    /* ADD_TEST(Test_GENERIC_EPS_CRC8_KnownVector); */
-    /* ADD_TEST(Test_GENERIC_EPS_RequestHK_Success); */
-    /* ADD_TEST(Test_GENERIC_EPS_RequestHK_CRCFail); */
-    /* ADD_TEST(Test_GENERIC_EPS_CommandDevice_Success); */
-    /* ADD_TEST(Test_GENERIC_EPS_CommandSwitch_BadSwitchNum); */
-    /* etc… */
+    ADD_TEST(GENERIC_EPS_RequestHK_I2CError);
 }
