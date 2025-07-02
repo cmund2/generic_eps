@@ -30,12 +30,12 @@
 /*
  * Macro to add a test to the UTF runner
  */
-#define ADD_TEST(test) UtTest_Add((Test_##test), GenericEPS_UT_Setup, GenericEPS_UT_TearDown, #test)
+#define ADD_TEST(test) UtTest_Add((Test_##test), Generic_eps_UT_Setup, Generic_eps_UT_TearDown, #test)
 
 /* Setup called before each test */
-void GenericEPS_UT_Setup(void);
+void Generic_eps_UT_Setup(void);
 
 /* Teardown called after each test */
-void GenericEPS_UT_TearDown(void);
+void Generic_eps_UT_TearDown(void);
 
 #endif /* GENERIC_EPS_APP_COVERAGETEST_COMMON_H */

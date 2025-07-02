@@ -25,6 +25,8 @@ target_include_directories(coverage-generic_eps-internal-stubs
 include_directories(${PROJECT_SOURCE_DIR}/fsw/src)
 # local test helpers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
+# pull in the common headers under coveragetest/
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/coveragetest)
 # mission-wide cFE public headers
 include_directories(${hwlib_MISSION_DIR}/fsw/public_inc)
 # UT-assert framework

@@ -74,7 +74,10 @@ void Test_GENERIC_EPS_AppMain_InitFailure(void){
     GENERIC_EPS_AppMain();
 
     // EPS app should have a run status of APP_ERROR"RunStatus==APP_ERROR on init failure");
-    UtAssert_True(GENERIC_EPS_AppData.RunStatus == CFE_ES_RunStatus_APP_ERROR,
+    UtAssert_True(
+            GENERIC_EPS_AppData.RunStatus == CFE_ES_RunStatus_APP_ERROR,
+            "GENERIC_EPS_AppData.RunStatus == CFE_ES_RunStatus_APP_ERROR"
+    );
 }
 
 

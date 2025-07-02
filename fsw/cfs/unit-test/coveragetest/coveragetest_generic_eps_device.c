@@ -5,7 +5,7 @@
 **   Coverage Unit Test skeleton for the GENERIC_EPS device layer.
 *******************************************************************************/
 
-#include "generic_eps_device_coveragetest_common.h"  /* Brings in UT_ASSERT, UT_KEY, stubs, etc */
+#include "generic_eps_app_coveragetest_common.h"  /* Brings in UT_ASSERT, UT_KEY, stubs, etc */
 
 /*--------------------------------------------------------------------
  * Unit Tests for EPS for TDAC Intern Project
