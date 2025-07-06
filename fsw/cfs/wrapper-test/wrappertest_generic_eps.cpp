@@ -1,3 +1,11 @@
+#ifdef I2C_SLAVE
+#undef I2C_SLAVE
+#endif
+
+#ifdef OS_SUCCESS
+#undef OS_SUCCESS
+#endif
+
 #include "generic_eps_app.h"
 #include "generic_eps_device.h"
 #include "generic_eps_hardware_model.hpp"
@@ -13,7 +21,7 @@ void test_switch7_on_and_drain(i2c_bus_info_t* device, int steps)
     int status = GENERIC_EPS_CommandSwitch(device, 7, 0xAA, &hk);
     std::cout << "[test_switch7_on_and_drain] Switch 7: " << (status == OS_SUCCESS ? "ON" : "Failed") << std::endl;
     for (int i = 0; i < steps; ++i) {
-        g_sim_model->update_battery_values();  // Step the sim model (simulate "time passing")
+        g_sim_model->test_update_battery_values();  // Step the sim model (simulate "time passing")
         GENERIC_EPS_RequestHK(device, &hk);   // Get current HK from device
         double batt_voltage = hk.BatteryVoltage * 0.001;
         std::cout << "T=" << i << " | Batt V=" << batt_voltage << " V\n";
@@ -26,7 +34,7 @@ int main()
     boost::property_tree::ptree config;
     config.put("hardware-model.name", "GENERIC_EPS");
     config.put("simulator.hardware-model.data-provider.type", "GENERIC_STATIC_DATA_PROVIDER");
-    config.put("simulator.hardware-model.static-data-file", "solar_vectors.csv"); /
+    config.put("simulator.hardware-model.static-data-file", "solar_vectors.csv");
 
     // --- Initialize sim model & set global pointer for stub ---
     Nos3::Generic_epsHardwareModel sim_model(config);

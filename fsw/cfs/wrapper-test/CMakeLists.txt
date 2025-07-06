@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(wrappertest_generic_eps)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)           # or 14, 17, depending on your needs
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)        # optional, disables compiler-specific extensions
 
 # Your wrapper test sources
 set(SOURCES

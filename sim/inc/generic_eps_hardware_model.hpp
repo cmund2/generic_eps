@@ -39,7 +39,8 @@ namespace Nos3
         /* Constructor and destructor */
         Generic_epsHardwareModel(const boost::property_tree::ptree& config);
         ~Generic_epsHardwareModel(void);
-        std::uint8_t determine_i2c_response_for_request(const std::vector<uint8_t>& in_data, std::vector<uint8_t>& out_data); 
+        std::uint8_t determine_i2c_response_for_request(const std::vector<uint8_t>& in_data, std::vector<uint8_t>& out_data);
+        void test_update_battery_values() {update_battery_values(); }
 
     private:
         /* Private helper methods */

@@ -13,6 +13,7 @@ set(generic_eps_sim_src
     src/generic_eps_42_data_provider.cpp
     src/generic_eps_data_provider.cpp
     src/generic_eps_data_point.cpp
+        src/generic_eps_static_data_provider.cpp
 )
 
 # For Code::Blocks and other IDEs
