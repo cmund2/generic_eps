@@ -7,28 +7,14 @@
 // Global pointer for stub
 Nos3::Generic_epsHardwareModel* g_sim_model = nullptr;
 
-// ---------- Simple test cases ----------
-void test_switch7_on(i2c_bus_info_t* device)
+void test_switch7_on_and_drain(i2c_bus_info_t* device, int steps)
 {
     GENERIC_EPS_Device_HK_tlm_t hk = {0};
     int status = GENERIC_EPS_CommandSwitch(device, 7, 0xAA, &hk);
-    std::cout << "[test_switch7_on] Switch 7: " << (status == OS_SUCCESS ? "ON" : "Failed") << std::endl;
-    for (int i = 0; i < 5; ++i) {
-        g_sim_model->update_battery_values();  // step the sim model
-        GENERIC_EPS_RequestHK(device, &hk);   // get current HK
-        double batt_voltage = hk.BatteryVoltage * 0.001;
-        std::cout << "T=" << i << " | Batt V=" << batt_voltage << " V\n";
-    }
-}
-
-void test_switch7_off(i2c_bus_info_t* device)
-{
-    GENERIC_EPS_Device_HK_tlm_t hk = {0};
-    int status = GENERIC_EPS_CommandSwitch(device, 7, 0x00, &hk);
-    std::cout << "[test_switch7_off] Switch 7: " << (status == OS_SUCCESS ? "OFF" : "Failed") << std::endl;
-    for (int i = 0; i < 5; ++i) {
-        g_sim_model->update_battery_values();
-        GENERIC_EPS_RequestHK(device, &hk);
+    std::cout << "[test_switch7_on_and_drain] Switch 7: " << (status == OS_SUCCESS ? "ON" : "Failed") << std::endl;
+    for (int i = 0; i < steps; ++i) {
+        g_sim_model->update_battery_values();  // Step the sim model (simulate "time passing")
+        GENERIC_EPS_RequestHK(device, &hk);   // Get current HK from device
         double batt_voltage = hk.BatteryVoltage * 0.001;
         std::cout << "T=" << i << " | Batt V=" << batt_voltage << " V\n";
     }
@@ -40,7 +26,7 @@ int main()
     boost::property_tree::ptree config;
     config.put("hardware-model.name", "GENERIC_EPS");
     config.put("simulator.hardware-model.data-provider.type", "GENERIC_STATIC_DATA_PROVIDER");
-    config.put("simulator.hardware-model.static-data-file", "solar_vectors.csv"); // name of your file!
+    config.put("simulator.hardware-model.static-data-file", "solar_vectors.csv"); /
 
     // --- Initialize sim model & set global pointer for stub ---
     Nos3::Generic_epsHardwareModel sim_model(config);
@@ -53,13 +39,11 @@ int main()
     device.isOpen = I2C_OPEN;
     device.speed = 400000;
 
-    // --- Run your test cases ---
-    std::cout << "\n=== Running Switch 7 ON Test ===\n";
-    test_switch7_on(&device);
-
-    std::cout << "\n=== Running Switch 7 OFF Test ===\n";
-    test_switch7_off(&device);
+    // --- Run single test case: Switch 7 ON, drain battery ---
+    std::cout << "\n=== Running Switch 7 ON + Drain Test ===\n";
+    test_switch7_on_and_drain(&device, 100);
 
     std::cout << "\nDone.\n";
     return 0;
 }
+
