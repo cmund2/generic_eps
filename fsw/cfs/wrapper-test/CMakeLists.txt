@@ -16,7 +16,8 @@ set(SOURCES
 include_directories(
         ../../sim/inc
         ../../shared
-        ../../cfs/src
+        ../../cfs/src           # cFE flight software headers (for cfe.h)
+        ${hwlib_MISSION_DIR}/fsw/public_inc  # Mission-wide public headers
 )
 
 # Boost (needed by sim and property_tree)
@@ -26,6 +27,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_executable(wrappertest_generic_eps ${SOURCES})
 
 target_link_libraries(wrappertest_generic_eps ${Boost_LIBRARIES})
+
 
 
 
