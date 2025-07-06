@@ -3,6 +3,7 @@
 namespace Nos3
 {
     REGISTER_HARDWARE_MODEL(Generic_epsHardwareModel,"GENERIC_EPS");
+    REGISTER_DATA_PROVIDER(GenericStaticDataProvider, "GENERIC_STATIC_DATA_PROVIDER");
 
     extern ItcLogger::Logger *sim_logger;
 
