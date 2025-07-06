@@ -7,10 +7,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(SOURCES
         wrappertest_generic_eps.cpp
         i2c_integration_stub.cpp
-        ../../sim/src/generic_eps_hardware_model.cpp
-        ../../sim/src/generic_eps_static_data_provider.cpp
-        ../../sim/src/generic_eps_data_point.cpp
-        ../../sim/src/generic_eps_data_provider.cpp
+        ../../../sim/src/generic_eps_hardware_model.cpp
+        ../../../sim/src/generic_eps_static_data_provider.cpp
         ../../shared/generic_eps_device.c
 )
 
