@@ -30,6 +30,8 @@ add_cfe_app(generic_eps
         ../shared/generic_eps_device.c
 )
 
+add_subdirectory(component_wrappers)
+
 # hook up your unit tests when ENABLE_UNIT_TESTS=ON
 if(ENABLE_UNIT_TESTS)
     add_subdirectory(unit-test)
