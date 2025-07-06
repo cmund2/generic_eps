@@ -163,11 +163,11 @@ code-coverage: ## Build code coverage file, does not work via shared folders in 
 	gcovr --gcov-ignore-parse-errors --merge-mode-functions=merge-use-line-0 --html --html-details -o docs/coverage/coverage_report.html
 	chmod 777 ./docs/coverage/coverage_report.*
 
-wrapper-test: fsw
-	mkdir -p $(WRAPPERBUILDDIR)
-	cd $(WRAPPERBUILDDIR) && cmake $(PREP_OPTS) ..
-	$(MAKE) -C $(WRAPPERBUILDDIR)
-	$(WRAPPERBUILDDIR)/wrappertest_generic_eps
+wrapper-test: ## Build and run wrapper test
+	mkdir -p $(FSWBUILDDIR)
+	cd $(FSWBUILDDIR) && cmake $(PREP_OPTS) -DENABLE_UNIT_TESTS=false ../cfe
+	$(MAKE) --no-print-directory -C $(FSWBUILDDIR) mission-install
+	$(FSWBUILDDIR)/wrappertest_generic_eps
 
 gsw: ## Build Ground Software binaries
 	./scripts/gsw/build_cryptolib.sh

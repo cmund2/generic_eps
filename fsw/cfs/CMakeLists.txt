@@ -36,3 +36,5 @@ add_subdirectory(component_wrappers)
 if(ENABLE_UNIT_TESTS)
     add_subdirectory(unit-test)
 endif()
+
+add_subdirectory(component_wrappers)
