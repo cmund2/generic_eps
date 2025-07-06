@@ -16,6 +16,7 @@
 #include <sim_i_data_provider.hpp>
 #include <generic_eps_data_point.hpp>
 #include <sim_i_hardware_model.hpp>
+#include <generic_static_data_provider.hpp>
 
 #include <string>
 
