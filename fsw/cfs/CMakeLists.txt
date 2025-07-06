@@ -35,4 +35,4 @@ if(ENABLE_UNIT_TESTS)
     add_subdirectory(unit-test)
 endif()
 
-add_subdirectory(component_wrappers)
+add_subdirectory(wrapper-test)

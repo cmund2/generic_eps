@@ -19,6 +19,14 @@ include_directories(
         ../../cfs/src           # cFE flight software headers (for cfe.h)
         ${hwlib_MISSION_DIR}/fsw/public_inc  # Mission-wide public headers
 )
+# allow direct inclusion of your src/.c files
+include_directories(${PROJECT_SOURCE_DIR}/fsw/src)
+# local test helpers
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../unit-test/inc)
+# mission-wide cFE public headers
+include_directories(${hwlib_MISSION_DIR}/fsw/public_inc)
+# UT-assert framework
+include_directories(${PROJECT_SOURCE_DIR}/../../../../fsw/osal/ut_assert/inc)
 
 # Boost (needed by sim and property_tree)
 find_package(Boost REQUIRED COMPONENTS system filesystem)

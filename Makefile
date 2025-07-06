@@ -165,7 +165,7 @@ code-coverage: ## Build code coverage file, does not work via shared folders in 
 
 wrapper-test: ## Build and run wrapper test
 	mkdir -p $(FSWBUILDDIR)
-	cd $(FSWBUILDDIR) && cmake $(PREP_OPTS) -DENABLE_UNIT_TESTS=false ../cfe
+	cd $(FSWBUILDDIR) && cmake $(PREP_OPTS) -DENABLE_UNIT_TESTS=true ../cfe
 	$(MAKE) --no-print-directory -C $(FSWBUILDDIR) mission-install
 	$(FSWBUILDDIR)/wrappertest_generic_eps
 
