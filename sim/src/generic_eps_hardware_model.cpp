@@ -532,7 +532,11 @@ namespace Nos3
 //        printf("Total power used is %f\n", p_out);
         printf("Battery Watt Hours are now %f\n", _bus[0]._battery_watthrs);
         printf("Battery Voltage is now %i\n", _bus[0]._voltage);
-        
+
+        // Output to csv the battery voltage
+        static std::ofstream batt_log("battery_log.csv", std::ios::app);
+        // you can use _sim_microseconds_per_tick or any other time reference
+        batt_log << _sim_microseconds_per_tick << "," << _bus[0]._voltage << "\n";
     }
 
     I2CSlaveConnection::I2CSlaveConnection(Generic_epsHardwareModel* hm,
